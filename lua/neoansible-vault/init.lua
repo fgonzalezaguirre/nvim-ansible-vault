@@ -7,6 +7,7 @@ function M.setup(opts)
   require("neoansible-vault.file").setup()
   require("neoansible-vault.inline").setup()
   require("neoansible-vault.picker").setup()
+  require("neoansible-vault.conceal").setup()
   return cfg
 end
 

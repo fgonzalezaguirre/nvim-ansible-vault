@@ -17,6 +17,9 @@ local M = {}
 ---@field keymap string|nil Keymap (normal mode) to pick a secret in the current buffer
 ---@field backend "auto"|"snacks"|"telescope"|"select" Picker backend (auto tries snacks, then telescope, then vim.ui.select)
 
+---@class neoansible-vault.ConcealConfig
+---@field enabled boolean Conceal the hex body of inline `!vault` blocks
+
 ---@class neoansible-vault.Config
 ---@field password string|nil Vault password set directly in config (use with care)
 ---@field password_file string|nil Explicit path to a vault password file or executable script
@@ -30,6 +33,7 @@ local M = {}
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field inline neoansible-vault.InlineConfig
 ---@field picker neoansible-vault.PickerConfig
+---@field conceal neoansible-vault.ConcealConfig
 
 ---@type neoansible-vault.Config
 M.defaults = {
@@ -57,6 +61,9 @@ M.defaults = {
     enabled = true,
     keymap = "<leader>vl",
     backend = "auto",
+  },
+  conceal = {
+    enabled = true,
   },
 }
 

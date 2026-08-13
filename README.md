@@ -14,6 +14,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 - **Secret picker** — list all `!vault` secrets in the buffer via snacks.nvim,
   telescope, or a plain `vim.ui.select` fallback; pick one to jump straight
   into the edit float.
+- **Concealed blobs** — the hex body of `!vault` blocks is hidden behind a
+  `[vault]` marker, so secret-heavy files stay readable (`'conceallevel'` is
+  managed per window and restored automatically).
 - **Flexible password management** — environment variable, `.env` files,
   `.vault-password` discovery, executable password scripts, or interactive
   prompt (cached in memory only).
@@ -93,6 +96,9 @@ require("neoansible-vault").setup({
     enabled = true,
     keymap = "<leader>vl",      -- pick a !vault secret in the buffer
     backend = "auto",           -- "auto" | "snacks" | "telescope" | "select"
+  },
+  conceal = {
+    enabled = true,             -- hide !vault blob lines behind a [vault] marker
   },
 })
 ```

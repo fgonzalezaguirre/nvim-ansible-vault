@@ -27,3 +27,5 @@
 - [x] lazy.nvim integration
       (lazy-loading spec in README/install.sh, zero-config bootstrap works
       when loaded after startup)
+- [x] concealed inline blobs
+      (hex bodies hidden via conceal_lines extmarks with a `[vault]` marker)

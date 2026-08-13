@@ -72,6 +72,10 @@ Options ~
   picker.keymap         Normal-mode mapping for |:AnsibleVaultSecrets|.
   picker.backend        "auto" (snacks, then telescope, then vim.ui.select),
                         or force one of "snacks", "telescope", "select".
+  conceal.enabled       Conceal the hex body of inline `!vault` blocks behind
+                        a "[vault]" marker (uses conceal_lines extmarks;
+                        'conceallevel' is raised per window while it shows a
+                        concealed buffer and restored afterwards).
 
 ==============================================================================
 3. PASSWORDS                                      *neoansible-vault-passwords*

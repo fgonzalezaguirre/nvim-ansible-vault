@@ -88,6 +88,40 @@ function tests.edit_outside_block_notifies_and_does_nothing()
   reset()
 end
 
+function tests.hover_shows_decrypted_preview()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local buf = make_yaml_buffer("hover-secret")
+  vim.api.nvim_win_set_cursor(0, { 2, 0 }) -- on the `db_password: !vault |` line
+
+  local inline = require("neoansible-vault.inline")
+  h.assert_true(inline.hover(), "hover on a vault block is handled")
+
+  -- open_floating_preview opens an unnamed float containing the plaintext
+  local fwin = nil
+  h.assert_true(h.wait_for(function()
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_config(win).relative ~= "" then
+        local wbuf = vim.api.nvim_win_get_buf(win)
+        if (vim.api.nvim_buf_get_lines(wbuf, 0, 1, false)[1] or ""):match("hover%-secret") then
+          fwin = win
+          return true
+        end
+      end
+    end
+    return false
+  end), "hover float did not show the decrypted value")
+  pcall(vim.api.nvim_win_close, fwin, true)
+
+  -- outside a block: not handled, no float
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  h.assert_true(not inline.hover(), "hover outside a block falls through")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.encrypt_selection_single_key_line()
   reset()
   require("neoansible-vault").setup({ prompt = false })

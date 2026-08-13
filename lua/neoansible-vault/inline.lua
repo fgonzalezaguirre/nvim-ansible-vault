@@ -136,17 +136,23 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
   vim.keymap.set("n", "q", close, { buffer = fbuf, desc = "Cancel vault edit" })
 end
 
+---Find the vault region under the cursor, honoring the treesitter option.
+---@param buf integer
+---@param row integer 0-indexed row
+---@return neoansible-vault.InlineRegion|nil
+local function region_at(buf, row)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  if config.get().inline.treesitter then
+    return detect.inline_region_at_ts(buf, lines, row)
+  end
+  return detect.inline_region_at(lines, row)
+end
+
 ---Edit the inline vault block under the cursor.
 function M.edit()
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
-  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  local region
-  if config.get().inline.treesitter then
-    region = detect.inline_region_at_ts(buf, lines, row)
-  else
-    region = detect.inline_region_at(lines, row)
-  end
+  local region = region_at(buf, row)
   if not region then
     notify_err("no !vault block under the cursor")
     return
@@ -171,6 +177,41 @@ function M.edit()
       open_float(buf, region, plaintext, cred, vault_id)
     end)
   end)
+end
+
+---Show the decrypted secret under the cursor in a read-only hover float.
+---@return boolean handled true when the cursor is on a vault block
+function M.hover()
+  local buf = vim.api.nvim_get_current_buf()
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local region = region_at(buf, row)
+  if not region then
+    return false
+  end
+
+  local header = detect.parse_header((region.blob_lines[1]:gsub("^%s*", "")))
+  local vault_id = header and header.vault_id or nil
+
+  password.get({ start_dir = buffer_dir(buf), vault_id = vault_id }, function(cred, err)
+    if not cred then
+      notify_err(err or "no vault password available")
+      return
+    end
+    cli.decrypt_blob(detect.region_blob_text(region), cred, function(dec_err, plaintext)
+      if dec_err then
+        notify_err("failed to decrypt " .. region.key .. ": " .. dec_err)
+        return
+      end
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+      vim.lsp.util.open_floating_preview(to_lines(plaintext), "yaml", {
+        border = config.get().inline.float.border,
+        focus = false,
+      })
+    end)
+  end)
+  return true
 end
 
 ---Encrypt a range of lines into a `key: !vault |` block.
@@ -235,6 +276,14 @@ function M.setup()
     vim.keymap.set("n", cfg.keymap, function()
       M.edit()
     end, { desc = "Edit ansible vault secret under cursor" })
+  end
+  if cfg.enabled and cfg.hover then
+    vim.keymap.set("n", "K", function()
+      if not M.hover() then
+        -- not on a vault block: default K behavior (keywordprg lookup)
+        vim.api.nvim_feedkeys("K", "n", false)
+      end
+    end, { desc = "Preview ansible vault secret / default K" })
   end
 end
 

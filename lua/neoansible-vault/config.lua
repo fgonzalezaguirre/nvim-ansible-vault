@@ -10,6 +10,7 @@ local M = {}
 ---@field enabled boolean Enable inline `!vault` editing
 ---@field keymap string|nil Keymap (normal mode) to edit the vault block under the cursor
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
+---@field hover boolean Map K to a decrypted hover preview on vault blocks (falls back to default K)
 ---@field float neoansible-vault.FloatConfig
 
 ---@class neoansible-vault.PickerConfig
@@ -51,6 +52,7 @@ M.defaults = {
     enabled = true,
     keymap = "<leader>ve",
     treesitter = true,
+    hover = true,
     float = {
       max_width = 0.6,
       max_height = 0.6,

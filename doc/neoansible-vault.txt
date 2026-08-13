@@ -66,6 +66,10 @@ Options ~
                         `!vault` matches (e.g. inside block scalars or
                         comments) when a parser is available. Falls back to
                         line-based detection otherwise.
+  inline.hover          Map K to a decrypted read-only preview of the vault
+                        block under the cursor. Falls back to default K
+                        elsewhere; buffer-local (e.g. LSP) K mappings take
+                        precedence over this global mapping.
   inline.float          Floating window sizing (fractions of the editor) and
                         border style.
   picker.enabled        Enable the secret picker.
@@ -152,6 +156,8 @@ require("neoansible-vault").status({buf})
 6. MAPPINGS                                       *neoansible-vault-mappings*
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
 <leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
+K                       Decrypted preview of the block under the cursor
+                        (inline.hover; default K elsewhere)
 
 Inside the edit float:
 <CR>                    Save and re-encrypt

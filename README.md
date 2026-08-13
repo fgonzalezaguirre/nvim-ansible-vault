@@ -17,6 +17,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 - **Concealed blobs** — the hex body of `!vault` blocks is hidden behind a
   `[vault]` marker, so secret-heavy files stay readable (`'conceallevel'` is
   managed per window and restored automatically).
+- **Hover preview** — `K` on a `!vault` block shows the decrypted value in a
+  read-only float without entering edit mode (falls back to default `K`
+  elsewhere; LSP buffer-local `K` mappings take precedence).
 - **Flexible password management** — environment variable, `.env` files,
   `.vault-password` discovery, executable password scripts, or interactive
   prompt (cached in memory only).
@@ -90,6 +93,7 @@ require("neoansible-vault").setup({
     keymap = "<leader>ve",      -- edit !vault block under cursor
     treesitter = true,          -- use YAML tree-sitter parser to avoid false
                                 -- positives when available (optional)
+    hover = true,               -- K shows a decrypted preview on vault blocks
     float = { max_width = 0.6, max_height = 0.6, border = "rounded" },
   },
   picker = {

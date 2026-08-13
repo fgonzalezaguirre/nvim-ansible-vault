@@ -38,12 +38,19 @@ vim.api.nvim_create_user_command("AnsibleVaultClearCache", function()
 end, { desc = "Forget cached vault passwords" })
 
 -- Work out of the box with defaults when the user never calls setup().
-vim.api.nvim_create_autocmd("VimEnter", {
-  group = vim.api.nvim_create_augroup("neoansible_vault_bootstrap", { clear = true }),
-  once = true,
-  callback = function()
-    if not require("neoansible-vault.config")._did_setup then
-      require("neoansible-vault").setup({})
-    end
-  end,
-})
+local function bootstrap()
+  if not require("neoansible-vault.config")._did_setup then
+    require("neoansible-vault").setup({})
+  end
+end
+
+if vim.v.vim_did_enter == 1 then
+  -- Loaded lazily after startup: bootstrap immediately.
+  bootstrap()
+else
+  vim.api.nvim_create_autocmd("VimEnter", {
+    group = vim.api.nvim_create_augroup("neoansible_vault_bootstrap", { clear = true }),
+    once = true,
+    callback = bootstrap,
+  })
+end

@@ -50,12 +50,21 @@ not create.
 **Manual** — with [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
-{ "you/neoansible-vault", opts = {} }              -- from a git remote
-{ dir = "~/dev/fga/neoansible-vault", opts = {} }  -- or a local checkout
+{
+  "you/neoansible-vault",                -- or: dir = "~/dev/fga/neoansible-vault",
+  -- load before any file read so vault files decrypt transparently on open
+  event = "BufReadPre",
+  keys = {
+    { "<leader>ve", desc = "Edit ansible vault secret" },
+    { "<leader>vl", desc = "Pick ansible vault secret" },
+  },
+  opts = {},
+}
 ```
 
 The plugin also works with zero configuration — autocmds and commands are
-registered with defaults if `setup()` is never called.
+registered with defaults if `setup()` is never called, even when the plugin
+is loaded lazily after startup.
 
 ## Configuration
 

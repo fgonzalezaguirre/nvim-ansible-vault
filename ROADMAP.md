@@ -24,3 +24,6 @@
       (`vault_id` config + optional `[vault-id]` argument on encrypt commands)
 - [x] statusline component
       (`require("neoansible-vault").status()` → `[vault]` / `[vault:<id>]`)
+- [x] lazy.nvim integration
+      (lazy-loading spec in README/install.sh, zero-config bootstrap works
+      when loaded after startup)

@@ -3,6 +3,12 @@ local M = {}
 
 M.PASSWORD = "testpass123"
 
+---Repository root (parent of the tests directory).
+M.root = (function()
+  local source = debug.getinfo(1, "S").source:sub(2)
+  return vim.fs.dirname(vim.fs.dirname(source))
+end)()
+
 ---Create a unique temp directory.
 ---@return string
 function M.tmpdir()

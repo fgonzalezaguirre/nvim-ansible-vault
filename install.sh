@@ -142,7 +142,11 @@ is_our_lazy_spec() {
 
 lazy_snippet() {
   cat <<EOF
-    { dir = "$REPO_ROOT", opts = {} },
+    {
+      dir = "$REPO_ROOT",
+      event = "BufReadPre", -- load before file reads so vault files decrypt transparently
+      opts = {},
+    },
 EOF
 }
 
@@ -166,6 +170,12 @@ do_install_lazy() {
 return {
   dir = "$REPO_ROOT",
   -- once published, replace \`dir\` with the git URL, e.g. "you/$PLUGIN_NAME",
+  -- load before any file read so vault files decrypt transparently on open
+  event = "BufReadPre",
+  keys = {
+    { "<leader>ve", desc = "Edit ansible vault secret" },
+    { "<leader>vl", desc = "Pick ansible vault secret" },
+  },
   opts = {},
 }
 EOF

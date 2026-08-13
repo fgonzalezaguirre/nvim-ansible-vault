@@ -22,3 +22,5 @@
       (`:AnsibleVaultRekey` with vault-id label preservation)
 - [x] vault-id on encryption
       (`vault_id` config + optional `[vault-id]` argument on encrypt commands)
+- [x] statusline component
+      (`require("neoansible-vault").status()` → `[vault]` / `[vault:<id>]`)

@@ -49,4 +49,35 @@ function M.clear_password_cache()
   require("neoansible-vault.password").clear_cache()
 end
 
+---Statusline component: vault state of a buffer as a short label.
+---Returns "[vault]" or "[vault:<id>]" for vault-related buffers, "" otherwise.
+---Results are cached per buffer and invalidated on change.
+---@param buf integer|nil defaults to the current buffer
+---@return string
+function M.status(buf)
+  buf = buf or vim.api.nvim_get_current_buf()
+
+  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault")
+  if ok and state then
+    return state.vault_id and ("[vault:" .. state.vault_id .. "]") or "[vault]"
+  end
+
+  local tick = vim.api.nvim_buf_get_changedtick(buf)
+  local cached_ok, cached = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault_status")
+  if cached_ok and cached.tick == tick then
+    return cached.value
+  end
+
+  local value = ""
+  local path = vim.api.nvim_buf_get_name(buf)
+  if path ~= "" then
+    local header = require("neoansible-vault.detect").file_header(path)
+    if header then
+      value = header.vault_id and ("[vault:" .. header.vault_id .. "]") or "[vault]"
+    end
+  end
+  pcall(vim.api.nvim_buf_set_var, buf, "neoansible_vault_status", { tick = tick, value = value })
+  return value
+end
+
 return M

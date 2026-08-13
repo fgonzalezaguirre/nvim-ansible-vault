@@ -145,6 +145,16 @@ db_password: !vault |
   back to the `vault_id` config option; existing vault-ids are always
   preserved on edit/write.
 
+## Statusline
+
+`require("neoansible-vault").status()` returns `[vault]` or `[vault:<id>]`
+for vault-related buffers (`""` otherwise) — cached per buffer and safe to
+call on every redraw. With lualine:
+
+```lua
+sections = { lualine_x = { { require("neoansible-vault").status } } }
+```
+
 ## Security notes
 
 - Decrypted whole-file buffers use `noswapfile`; the float scratch buffers

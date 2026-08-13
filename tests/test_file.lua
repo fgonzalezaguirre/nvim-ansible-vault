@@ -164,6 +164,44 @@ function tests.rekey_changes_password_and_preserves_vault_id()
   reset()
 end
 
+function tests.status_component()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+
+  -- plain file: no label
+  local plain = dir .. "/plain.yml"
+  h.write_file(plain, "k: v\n")
+  vim.cmd.edit(vim.fn.fnameescape(plain))
+  local plain_buf = vim.api.nvim_get_current_buf()
+  h.assert_eq(require("neoansible-vault").status(plain_buf), "")
+
+  -- encrypted file with vault-id, transparently decrypted: [vault:prod]
+  local prod = dir .. "/prod.yml"
+  h.write_file(prod, "k: v\n")
+  h.vault_encrypt(prod, passfile, "prod")
+  local prod_buf = edit_and_wait(prod)
+  h.assert_eq(require("neoansible-vault").status(prod_buf), "[vault:prod]")
+
+  -- encrypted file without id, auto_decrypt off: ciphertext -> [vault]
+  require("neoansible-vault").setup({ prompt = false, auto_decrypt = false })
+  local enc = dir .. "/enc.yml"
+  h.write_file(enc, "k: v\n")
+  h.vault_encrypt(enc, passfile)
+  vim.cmd.edit(vim.fn.fnameescape(enc))
+  local enc_buf = vim.api.nvim_get_current_buf()
+  h.assert_eq(require("neoansible-vault").status(enc_buf), "[vault]")
+  -- cached value survives repeat calls
+  h.assert_eq(require("neoansible-vault").status(enc_buf), "[vault]")
+
+  vim.cmd.bwipeout({ bang = true })
+  vim.cmd.bwipeout({ bang = true })
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.non_vault_file_untouched()
   reset()
   require("neoansible-vault").setup({ prompt = false })

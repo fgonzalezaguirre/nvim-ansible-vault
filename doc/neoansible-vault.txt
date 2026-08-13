@@ -134,8 +134,18 @@ to ansible-vault via a 0600 temp file deleted after each call.
 :AnsibleVaultClearCache Forget all cached (prompted) vault passwords.
 
 ==============================================================================
-5. MAPPINGS                                       *neoansible-vault-mappings*
+5. STATUSLINE                                     *neoansible-vault-statusline*
 
+                                                *neoansible-vault.status()*
+require("neoansible-vault").status({buf})
+                        Returns "[vault]" or "[vault:<id>]" for vault-related
+                        buffers, "" otherwise. Cached per buffer (invalidated
+                        on change), safe to call on every redraw. Example with
+                        lualine: >lua
+                          sections = { lualine_x = { { require("neoansible-vault").status } } }
+<
+==============================================================================
+6. MAPPINGS                                       *neoansible-vault-mappings*
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
 <leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
 

@@ -32,6 +32,7 @@ local M = {}
 ---@field cache_ttl integer Seconds to cache resolved passwords in memory (0 disables)
 ---@field vault_id string|nil Default vault-id label for new encryptions
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
+---@field keymap_filetypes string[] Filetypes that get the buffer-local keymaps
 ---@field inline neoansible-vault.InlineConfig
 ---@field picker neoansible-vault.PickerConfig
 ---@field conceal neoansible-vault.ConcealConfig
@@ -48,6 +49,7 @@ M.defaults = {
   cache_ttl = 900,
   vault_id = nil,
   auto_decrypt = true,
+  keymap_filetypes = { "yaml", "yaml.ansible" },
   inline = {
     enabled = true,
     keymap = "<leader>ve",

@@ -33,3 +33,6 @@
       (`K` on a `!vault` block shows the decrypted value read-only)
 - [x] `yaml.ansible` filetype detection
       (playbooks, roles, group_vars/host_vars layouts)
+- [x] buffer-local keymaps
+      (`<leader>ve`/`<leader>vl` only exist in yaml buffers; `K` falls back
+      to default K; `<leader>v` is unused by LazyVim)

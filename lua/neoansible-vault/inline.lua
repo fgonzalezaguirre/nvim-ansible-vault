@@ -264,7 +264,7 @@ function M.encrypt_selection(line1, line2, vault_id)
   end)
 end
 
----Register the inline-edit keymap. Idempotent.
+---Register the inline-edit keymap (buffer-local to yaml buffers). Idempotent.
 function M.setup()
   if group then
     return
@@ -272,15 +272,16 @@ function M.setup()
   group = vim.api.nvim_create_augroup("neoansible_vault_inline", { clear = true })
 
   local cfg = config.get().inline
-  if cfg.enabled and cfg.keymap and cfg.keymap ~= "" then
-    vim.keymap.set("n", cfg.keymap, function()
+  if cfg.enabled then
+    require("neoansible-vault.keymaps").setup(group, cfg.keymap, function()
       M.edit()
-    end, { desc = "Edit ansible vault secret under cursor" })
+    end, "Edit ansible vault secret under cursor")
   end
   if cfg.enabled and cfg.hover then
+    -- Global on purpose: buffer-local (e.g. LSP hover) K mappings still take
+    -- precedence; everywhere else the fallback below runs the default K.
     vim.keymap.set("n", "K", function()
       if not M.hover() then
-        -- not on a vault block: default K behavior (keywordprg lookup)
         vim.api.nvim_feedkeys("K", "n", false)
       end
     end, { desc = "Preview ansible vault secret / default K" })

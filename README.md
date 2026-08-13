@@ -91,6 +91,7 @@ require("neoansible-vault").setup({
   cache_ttl = 900,              -- seconds to cache *prompted* passwords (0 = off)
   vault_id = nil,               -- default vault-id label for new encryptions
   auto_decrypt = true,          -- transparent whole-file decrypt on read
+  keymap_filetypes = { "yaml", "yaml.ansible" }, -- buffers that get keymaps
   inline = {
     enabled = true,
     keymap = "<leader>ve",      -- edit !vault block under cursor
@@ -166,6 +167,15 @@ db_password: !vault |
   optional vault-id argument (`:AnsibleVaultEncryptString prod`) and fall
   back to the `vault_id` config option; existing vault-ids are always
   preserved on edit/write.
+
+## Keymaps
+
+The `<leader>ve` / `<leader>vl` mappings are **buffer-local** — they only
+exist in buffers whose filetype is in `keymap_filetypes` (yaml by default),
+so they cannot clash with your other mappings. `<leader>v` is unused by
+LazyVim (core and extras). `K` is global but falls back to the default `K`
+off a vault block, and buffer-local mappings (e.g. LSP hover) take
+precedence over it.
 
 ## Statusline
 

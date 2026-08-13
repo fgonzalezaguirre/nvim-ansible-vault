@@ -60,6 +60,9 @@ Options ~
   cache_ttl             Seconds prompted passwords are cached (0 disables).
   vault_id              Default vault-id label for new encryptions.
   auto_decrypt          Transparently decrypt vault files on read.
+  keymap_filetypes      Filetypes whose buffers get the inline.keymap and
+                        picker.keymap mappings (buffer-local). Default:
+                        { "yaml", "yaml.ansible" }.
   inline.enabled        Enable inline `!vault` editing.
   inline.keymap         Normal-mode mapping for |:AnsibleVaultEdit|.
   inline.treesitter     Use tree-sitter (YAML parser) to reject false-positive
@@ -154,10 +157,15 @@ require("neoansible-vault").status({buf})
 <
 ==============================================================================
 6. MAPPINGS                                       *neoansible-vault-mappings*
+
+The keymaps below are buffer-local to |keymap_filetypes| buffers (yaml by
+default), so they never clash with mappings in unrelated buffers.
+
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
 <leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
 K                       Decrypted preview of the block under the cursor
-                        (inline.hover; default K elsewhere)
+                        (inline.hover; global, but buffer-local mappings such
+                        as LSP hover take precedence; default K elsewhere)
 
 Inside the edit float:
 <CR>                    Save and re-encrypt

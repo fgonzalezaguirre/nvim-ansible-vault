@@ -153,7 +153,7 @@ function M.pick()
   pick_select(entries)
 end
 
----Register the picker keymap. Idempotent.
+---Register the picker keymap (buffer-local to yaml buffers). Idempotent.
 function M.setup()
   if group then
     return
@@ -161,10 +161,10 @@ function M.setup()
   group = vim.api.nvim_create_augroup("neoansible_vault_picker", { clear = true })
 
   local cfg = config.get().picker
-  if cfg.enabled and cfg.keymap and cfg.keymap ~= "" then
-    vim.keymap.set("n", cfg.keymap, function()
+  if cfg.enabled then
+    require("neoansible-vault.keymaps").setup(group, cfg.keymap, function()
       M.pick()
-    end, { desc = "Pick an ansible vault secret in this buffer" })
+    end, "Pick an ansible vault secret in this buffer")
   end
 end
 

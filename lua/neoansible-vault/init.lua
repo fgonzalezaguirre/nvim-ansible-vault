@@ -37,6 +37,11 @@ function M.encrypt_buffer()
   require("neoansible-vault.file").encrypt_buffer()
 end
 
+---Rekey the vault file backing the current buffer with a new password.
+function M.rekey_buffer()
+  require("neoansible-vault.file").rekey_buffer()
+end
+
 ---Forget all cached vault passwords.
 function M.clear_password_cache()
   require("neoansible-vault.password").clear_cache()

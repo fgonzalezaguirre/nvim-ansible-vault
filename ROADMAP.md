@@ -18,3 +18,5 @@
       (optional YAML parser filters false positives; line-based fallback)
 - [x] telescope/snacks.nvim integration
       (`:AnsibleVaultSecrets` picker with `vim.ui.select` fallback)
+- [x] rekey support
+      (`:AnsibleVaultRekey` with vault-id label preservation)

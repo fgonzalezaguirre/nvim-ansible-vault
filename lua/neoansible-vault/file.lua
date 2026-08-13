@@ -252,6 +252,66 @@ function M.encrypt_buffer()
   end)
 end
 
+---Rekey the vault file backing the current buffer: re-encrypt it with a new
+---password and optionally a new vault-id label.
+function M.rekey_buffer()
+  local buf = vim.api.nvim_get_current_buf()
+  local path = vim.api.nvim_buf_get_name(buf)
+  if path == "" then
+    notify_err("buffer has no file name")
+    return
+  end
+  local state = get_state(buf)
+  local header = detect.file_header(path)
+  if not state and not header then
+    notify_err("not a vault file: " .. vim.fn.fnamemodify(path, ":t"))
+    return
+  end
+  if state and vim.bo[buf].modified then
+    notify_err("write the buffer before rekeying")
+    return
+  end
+  local vault_id = (state and state.vault_id) or (header and header.vault_id) or nil
+
+  password.get({ start_dir = vim.fs.dirname(path), vault_id = vault_id }, function(old_cred, err)
+    if not old_cred then
+      notify_err(err or "no vault password available")
+      return
+    end
+    vim.ui.input({ prompt = "New vault password: ", secret = true }, function(new_pass)
+      if not new_pass or new_pass == "" then
+        return
+      end
+      local id_prompt = ("New vault-id (empty = keep %s): "):format(vault_id or "none")
+      vim.ui.input({ prompt = id_prompt }, function(new_id)
+        if new_id == "" then
+          new_id = nil
+        end
+        local new_cred = { kind = "secret", value = new_pass, source = "prompt" }
+        cli.rekey(path, old_cred, new_cred, { vault_id = vault_id, new_vault_id = new_id }, function(rekey_err)
+          if rekey_err then
+            notify_err("rekey failed: " .. rekey_err)
+            return
+          end
+          -- Any cached (old) password is now wrong for this file.
+          password.clear_cache()
+          if state and vim.api.nvim_buf_is_valid(buf) then
+            state.vault_id = new_id or vault_id
+            vim.b[buf].neoansible_vault = state
+          end
+          notify(
+            ("rekeyed %s%s"):format(
+              vim.fn.fnamemodify(path, ":t"),
+              (new_id or vault_id) and (" [vault-id: " .. (new_id or vault_id) .. "]") or ""
+            ),
+            vim.log.levels.INFO
+          )
+        end)
+      end)
+    end)
+  end)
+end
+
 ---Register autocmds. Idempotent.
 function M.setup()
   if group then

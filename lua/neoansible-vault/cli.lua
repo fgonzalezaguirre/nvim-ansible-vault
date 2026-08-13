@@ -126,6 +126,75 @@ function M.decrypt_blob(blob, cred, cb)
   end)
 end
 
+---Materialize a credential as a passfile path: file credentials are used
+---directly, raw secrets go to a 0600 temp file.
+---@param cred neoansible-vault.Credential
+---@return string|nil path, fun() cleanup, string|nil err
+local function cred_passfile(cred)
+  if cred.kind == "file" then
+    return cred.value, function() end, nil
+  end
+  local path, cleanup, err = secret_tempfile(cred.value)
+  return path, cleanup or function() end, err
+end
+
+---Rekey a vault file: re-encrypt it with a new password and optionally a new
+---vault-id label. An existing vault-id label is preserved unless
+---`opts.new_vault_id` says otherwise (passing no new id would drop the label).
+---@param path string
+---@param old_cred neoansible-vault.Credential
+---@param new_cred neoansible-vault.Credential
+---@param opts { vault_id: string|nil, new_vault_id: string|nil }|nil
+---@param cb fun(err: string|nil)
+function M.rekey(path, old_cred, new_cred, opts, cb)
+  opts = opts or {}
+  local old_file, old_cleanup, oerr = cred_passfile(old_cred)
+  if not old_file then
+    vim.schedule(function()
+      cb(oerr)
+    end)
+    return
+  end
+  local new_file, new_cleanup, nerr = cred_passfile(new_cred)
+  if not new_file then
+    old_cleanup()
+    vim.schedule(function()
+      cb(nerr)
+    end)
+    return
+  end
+
+  local args = { "ansible-vault", "rekey" }
+  if opts.vault_id then
+    vim.list_extend(args, { "--vault-id", opts.vault_id .. "@" .. old_file })
+  else
+    vim.list_extend(args, { "--vault-password-file", old_file })
+  end
+  local new_id = opts.new_vault_id or opts.vault_id -- preserve the label
+  if new_id then
+    vim.list_extend(args, { "--new-vault-id", new_id .. "@" .. new_file })
+  else
+    vim.list_extend(args, { "--new-vault-password-file", new_file })
+  end
+  table.insert(args, path)
+
+  vim.system(args, { text = true }, function(res)
+    old_cleanup()
+    new_cleanup()
+    vim.schedule(function()
+      if res.code == 0 then
+        cb(nil)
+      else
+        local err = vim.trim(res.stderr or "")
+        if err == "" then
+          err = ("ansible-vault rekey exited with code %d"):format(res.code)
+        end
+        cb(err)
+      end
+    end)
+  end)
+end
+
 ---Encrypt a string, producing a `key: !vault |` block.
 ---@param plaintext string
 ---@param key string variable name

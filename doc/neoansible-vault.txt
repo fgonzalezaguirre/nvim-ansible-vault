@@ -114,9 +114,16 @@ to ansible-vault via a 0600 temp file deleted after each call.
 :AnsibleVaultDecrypt    Decrypt the current buffer in place. The buffer is
                         re-encrypted on write.
 
-                                                     *:AnsibleVaultEncrypt*
+                                                      *:AnsibleVaultEncrypt*
 :AnsibleVaultEncrypt    Encrypt the current buffer, replacing its content
                         with vault ciphertext.
+
+                                                       *:AnsibleVaultRekey*
+:AnsibleVaultRekey      Rekey the vault file backing the current buffer:
+                        prompts for a new password and optionally a new
+                        vault-id (an existing vault-id label is preserved).
+                        The in-memory password cache is cleared afterwards;
+                        update your password file/env to the new password.
 
                                                    *:AnsibleVaultClearCache*
 :AnsibleVaultClearCache Forget all cached (prompted) vault passwords.

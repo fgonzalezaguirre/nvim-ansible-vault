@@ -118,6 +118,7 @@ The buffer shows a `[vault-id: x]` note when applicable.
 | --- | --- |
 | `:AnsibleVaultDecrypt` | Decrypt the current buffer (re-encrypts on write) |
 | `:AnsibleVaultEncrypt` | Encrypt the current buffer, replacing it with ciphertext |
+| `:AnsibleVaultRekey` | Re-encrypt the file with a new password (and optionally a new vault-id) |
 | `:AnsibleVaultClearCache` | Forget cached (prompted) passwords |
 
 ### Inline `!vault` blocks

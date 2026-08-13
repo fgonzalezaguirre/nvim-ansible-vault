@@ -28,6 +28,10 @@ vim.api.nvim_create_user_command("AnsibleVaultEncrypt", function()
   require("neoansible-vault").encrypt_buffer()
 end, { desc = "Encrypt the current buffer, replacing it with ciphertext" })
 
+vim.api.nvim_create_user_command("AnsibleVaultRekey", function()
+  require("neoansible-vault").rekey_buffer()
+end, { desc = "Rekey the vault file with a new password (and vault-id)" })
+
 vim.api.nvim_create_user_command("AnsibleVaultClearCache", function()
   require("neoansible-vault").clear_password_cache()
   vim.notify("vault password cache cleared", vim.log.levels.INFO, { title = "neoansible-vault" })

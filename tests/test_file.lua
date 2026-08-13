@@ -103,6 +103,67 @@ function tests.vault_id_file_roundtrip()
   reset()
 end
 
+function tests.rekey_changes_password_and_preserves_vault_id()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local newfile = dir .. "/new-password"
+  h.write_file(newfile, "newpass456\n")
+  vim.uv.fs_chmod(newfile, 384) -- 0600
+  local path = dir .. "/prod.yml"
+  h.write_file(path, "k: v\n")
+  h.vault_encrypt(path, passfile, "prod")
+
+  local buf = edit_and_wait(path)
+  h.assert_eq(current_state(buf).vault_id, "prod")
+
+  -- Stub the two prompts: new password, then new vault-id (kept).
+  local orig_input = vim.ui.input
+  local prompts = {}
+  vim.ui.input = function(opts, cb)
+    table.insert(prompts, opts.prompt)
+    if opts.prompt:match("^New vault password") then
+      cb("newpass456")
+    else
+      cb("") -- keep current vault-id
+    end
+  end
+  require("neoansible-vault").rekey_buffer()
+  h.assert_true(h.wait_for(function()
+    -- the header keeps the 1.2 label, so poll the password change itself
+    local code = h.sys({ "ansible-vault", "view", "--vault-password-file", newfile, path })
+    return code == 0
+  end), "rekey did not complete")
+  vim.ui.input = orig_input
+  h.assert_eq(#prompts, 2)
+
+  local fd = assert(io.open(path, "r"))
+  h.assert_eq(fd:read("*l"), "$ANSIBLE_VAULT;1.2;AES256;prod", "vault-id label preserved")
+  fd:close()
+
+  -- old password no longer works, new one does
+  local code = h.sys({ "ansible-vault", "view", "--vault-password-file", passfile, path })
+  h.assert_true(code ~= 0, "old password must fail after rekey")
+  h.assert_eq(h.vault_view(path, newfile), "k: v\n")
+
+  -- simulate the user updating their discovered password file
+  h.write_passfile(dir, "newpass456")
+
+  -- buffer is still flagged and writes with the new password
+  h.assert_true(current_state(buf) ~= nil)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "k: after-rekey" })
+  vim.cmd.write()
+  h.assert_true(h.wait_for(function()
+    return vim.bo[buf].modified == false
+  end), "write after rekey did not complete")
+  h.assert_eq(h.vault_view(path, newfile), "k: after-rekey\n")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.non_vault_file_untouched()
   reset()
   require("neoansible-vault").setup({ prompt = false })

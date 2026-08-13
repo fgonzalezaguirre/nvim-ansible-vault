@@ -14,8 +14,9 @@
       (`:AnsibleVaultEncryptString` turns a line/selection into a `!vault` block)
 - [x] file encryption/decryption commands
       (`:AnsibleVaultDecrypt`, `:AnsibleVaultEncrypt`)
+- [x] telescope/snacks.nvim integration
+      (`:AnsibleVaultSecrets` picker with `vim.ui.select` fallback)
 
 ## Future ideas
 
 - Tree-sitter based inline region detection
-- telescope/snacks.nvim integration

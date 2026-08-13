@@ -20,6 +20,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 - **Hover preview** — `K` on a `!vault` block shows the decrypted value in a
   read-only float without entering edit mode (falls back to default `K`
   elsewhere; LSP buffer-local `K` mappings take precedence).
+- **`yaml.ansible` filetype** — common Ansible layouts (`playbooks/`,
+  `roles/*/{tasks,handlers,vars,defaults}`, `group_vars`, `host_vars`) are
+  detected as `yaml.ansible` for your own autocmds and lazy.nvim `ft` triggers.
 - **Flexible password management** — environment variable, `.env` files,
   `.vault-password` discovery, executable password scripts, or interactive
   prompt (cached in memory only).

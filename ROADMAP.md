@@ -31,3 +31,5 @@
       (hex bodies hidden via conceal_lines extmarks with a `[vault]` marker)
 - [x] hover preview
       (`K` on a `!vault` block shows the decrypted value read-only)
+- [x] `yaml.ansible` filetype detection
+      (playbooks, roles, group_vars/host_vars layouts)

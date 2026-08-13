@@ -14,8 +14,9 @@
       (`:AnsibleVaultEncryptString` turns a line/selection into a `!vault` block)
 - [x] file encryption/decryption commands
       (`:AnsibleVaultDecrypt`, `:AnsibleVaultEncrypt`)
+- [x] Tree-sitter based inline region detection
+      (optional YAML parser filters false positives; line-based fallback)
 
 ## Future ideas
 
-- Tree-sitter based inline region detection
 - telescope/snacks.nvim integration

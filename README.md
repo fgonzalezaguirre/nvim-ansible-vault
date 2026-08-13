@@ -19,6 +19,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 
 - Neovim >= 0.12
 - `ansible-vault` on `$PATH` (from `ansible-core`)
+- Optional: YAML tree-sitter parser (e.g. via nvim-treesitter) for more
+  precise `!vault` detection — the plugin falls back to line-based
+  detection without it
 
 ## Installation
 
@@ -69,6 +72,8 @@ require("neoansible-vault").setup({
   inline = {
     enabled = true,
     keymap = "<leader>ve",      -- edit !vault block under cursor
+    treesitter = true,          -- use YAML tree-sitter parser to avoid false
+                                -- positives when available (optional)
     float = { max_width = 0.6, max_height = 0.6, border = "rounded" },
   },
 })

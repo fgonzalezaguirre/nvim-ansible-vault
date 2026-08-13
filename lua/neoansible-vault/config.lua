@@ -9,6 +9,7 @@ local M = {}
 ---@class neoansible-vault.InlineConfig
 ---@field enabled boolean Enable inline `!vault` editing
 ---@field keymap string|nil Keymap (normal mode) to edit the vault block under the cursor
+---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field float neoansible-vault.FloatConfig
 
 ---@class neoansible-vault.Config
@@ -37,6 +38,7 @@ M.defaults = {
   inline = {
     enabled = true,
     keymap = "<leader>ve",
+    treesitter = true,
     float = {
       max_width = 0.6,
       max_height = 0.6,

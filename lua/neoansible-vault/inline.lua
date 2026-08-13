@@ -141,7 +141,12 @@ function M.edit()
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  local region = detect.inline_region_at(lines, row)
+  local region
+  if config.get().inline.treesitter then
+    region = detect.inline_region_at_ts(buf, lines, row)
+  else
+    region = detect.inline_region_at(lines, row)
+  end
   if not region then
     notify_err("no !vault block under the cursor")
     return

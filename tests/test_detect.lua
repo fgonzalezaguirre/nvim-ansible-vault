@@ -89,4 +89,57 @@ function tests.find_inline_regions_ignores_lookalikes()
   h.assert_eq(#detect.find_inline_regions(lines), 0)
 end
 
+---@return integer|nil buf buffer with SAMPLE_YAML, or nil if no YAML parser
+local function ts_buf(lines)
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  local ok = pcall(vim.treesitter.get_parser, buf, "yaml")
+  if not ok then
+    vim.api.nvim_buf_delete(buf, { force = true })
+    return nil
+  end
+  return buf
+end
+
+function tests.ts_detection_matches_line_based()
+  local buf = ts_buf(SAMPLE_YAML)
+  if not buf then
+    print("  (skipped: no yaml tree-sitter parser)")
+    return
+  end
+  local regions = detect.find_inline_regions_ts(buf, SAMPLE_YAML)
+  h.assert_eq(#regions, 2, "tree-sitter finds the same two regions")
+  h.assert_eq(regions[1].key, "db_password")
+  h.assert_eq(regions[2].key, "key")
+  h.assert_eq(detect.inline_region_at_ts(buf, SAMPLE_YAML, 2).key, "db_password")
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
+
+function tests.ts_detection_rejects_false_positives()
+  local lines = {
+    "# db_password: !vault |",
+    "#   $ANSIBLE_VAULT;1.1;AES256",
+    "#   6438316338653863633032366232653137",
+    "script: |",
+    "  db_password: !vault |",
+    "    $ANSIBLE_VAULT;1.1;AES256",
+    "    6438316338653863633032366232653137",
+    "real: !vault |",
+    "  $ANSIBLE_VAULT;1.1;AES256",
+    "  6438316338653863633032366232653137",
+  }
+  -- Line-based detection alone matches the vault-looking text embedded in
+  -- the `script` block scalar; tree-sitter knows it is just scalar content.
+  h.assert_eq(#detect.find_inline_regions(lines), 2)
+  local buf = ts_buf(lines)
+  if not buf then
+    print("  (skipped: no yaml tree-sitter parser)")
+    return
+  end
+  local regions = detect.find_inline_regions_ts(buf, lines)
+  h.assert_eq(#regions, 1, "only the real tag survives tree-sitter filtering")
+  h.assert_eq(regions[1].key, "real")
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
+
 return tests

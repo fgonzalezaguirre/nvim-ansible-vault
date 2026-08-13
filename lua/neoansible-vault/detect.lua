@@ -117,6 +117,69 @@ function M.inline_region_at(lines, row)
   return nil
 end
 
+---Locate `!vault` tag rows via tree-sitter (YAML parser).
+---@param buf integer
+---@return table<integer, boolean>|nil rows set of 0-indexed tag rows, or nil if TS is unavailable
+function M.ts_vault_rows(buf)
+  if not vim.treesitter or not vim.treesitter.get_parser then
+    return nil
+  end
+  local ok, parser = pcall(vim.treesitter.get_parser, buf, "yaml")
+  if not ok or not parser then
+    return nil
+  end
+  local tree = parser:parse()[1]
+  if not tree then
+    return nil
+  end
+  local qok, query = pcall(vim.treesitter.query.parse, "yaml", "(tag) @tag")
+  if not qok or not query then
+    return nil
+  end
+  local rows = {}
+  for _, node in query:iter_captures(tree:root(), buf, 0, -1) do
+    if vim.treesitter.get_node_text(node, buf) == "!vault" then
+      rows[node:start()] = true
+    end
+  end
+  return rows
+end
+
+---Find all inline `!vault` regions, using tree-sitter to reject false
+---positives (comments, quoted strings) when the YAML parser is available.
+---Falls back to pure line-based detection otherwise.
+---@param buf integer
+---@param lines string[]
+---@return neoansible-vault.InlineRegion[]
+function M.find_inline_regions_ts(buf, lines)
+  local regions = M.find_inline_regions(lines)
+  local tag_rows = M.ts_vault_rows(buf)
+  if not tag_rows then
+    return regions
+  end
+  local filtered = {}
+  for _, region in ipairs(regions) do
+    if tag_rows[region.start_row] then
+      table.insert(filtered, region)
+    end
+  end
+  return filtered
+end
+
+---Find the inline vault region containing the given row (tree-sitter aware).
+---@param buf integer
+---@param lines string[]
+---@param row integer 0-indexed row
+---@return neoansible-vault.InlineRegion|nil
+function M.inline_region_at_ts(buf, lines, row)
+  for _, region in ipairs(M.find_inline_regions_ts(buf, lines)) do
+    if row >= region.start_row and row < region.end_row then
+      return region
+    end
+  end
+  return nil
+end
+
 ---Extract the bare vault blob (header + hex, indentation stripped) from a region.
 ---@param region neoansible-vault.InlineRegion
 ---@return string

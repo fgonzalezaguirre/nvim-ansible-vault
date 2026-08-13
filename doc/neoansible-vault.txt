@@ -41,6 +41,11 @@ The plugin works out of the box with defaults. To configure: >lua
       treesitter = true,
       float = { max_width = 0.6, max_height = 0.6, border = "rounded" },
     },
+    picker = {
+      enabled = true,
+      keymap = "<leader>vl",
+      backend = "auto",
+    },
   })
 <
 Options ~
@@ -62,6 +67,10 @@ Options ~
                         line-based detection otherwise.
   inline.float          Floating window sizing (fractions of the editor) and
                         border style.
+  picker.enabled        Enable the secret picker.
+  picker.keymap         Normal-mode mapping for |:AnsibleVaultSecrets|.
+  picker.backend        "auto" (snacks, then telescope, then vim.ui.select),
+                        or force one of "snacks", "telescope", "select".
 
 ==============================================================================
 3. PASSWORDS                                      *neoansible-vault-passwords*
@@ -89,6 +98,12 @@ to ansible-vault via a 0600 temp file deleted after each call.
                         floating window. Writing the float (:w or <CR>)
                         re-encrypts and replaces the block; <Esc>/q cancels.
 
+                                                     *:AnsibleVaultSecrets*
+:AnsibleVaultSecrets    List all `!vault` secrets in the current buffer and
+                        open the chosen one in the edit float. Uses
+                        snacks.nvim or telescope.nvim when installed, falling
+                        back to |vim.ui.select()|.
+
                                                 *:AnsibleVaultEncryptString*
 :[range]AnsibleVaultEncryptString
                         Encrypt [range] lines into a `key: !vault |` block.
@@ -110,6 +125,7 @@ to ansible-vault via a 0600 temp file deleted after each call.
 5. MAPPINGS                                       *neoansible-vault-mappings*
 
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
+<leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
 
 Inside the edit float:
 <CR>                    Save and re-encrypt

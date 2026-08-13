@@ -11,6 +11,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 - **Inline secret editing** — cursor on a `!vault` block, one keypress, edit
   the decrypted value in a floating window, save to re-encrypt in place.
 - **Encrypt new secrets** — turn any line or selection into a `!vault` block.
+- **Secret picker** — list all `!vault` secrets in the buffer via snacks.nvim,
+  telescope, or a plain `vim.ui.select` fallback; pick one to jump straight
+  into the edit float.
 - **Flexible password management** — environment variable, `.env` files,
   `.vault-password` discovery, executable password scripts, or interactive
   prompt (cached in memory only).
@@ -76,6 +79,11 @@ require("neoansible-vault").setup({
                                 -- positives when available (optional)
     float = { max_width = 0.6, max_height = 0.6, border = "rounded" },
   },
+  picker = {
+    enabled = true,
+    keymap = "<leader>vl",      -- pick a !vault secret in the buffer
+    backend = "auto",           -- "auto" | "snacks" | "telescope" | "select"
+  },
 })
 ```
 
@@ -123,6 +131,9 @@ db_password: !vault |
 - Cursor anywhere on the block → `<leader>ve` or `:AnsibleVaultEdit` →
   floating window with the plaintext. `<CR>`/`:w` saves and re-encrypts,
   `<Esc>`/`q` cancels.
+- `<leader>vl` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
+  buffer (snacks.nvim or telescope if installed, `vim.ui.select` otherwise)
+  and opens the chosen one in the edit float.
 - Visually select text (or put the cursor on a `key: value` line) →
   `:'<,'>AnsibleVaultEncryptString` → prompts for a variable name and
   replaces the selection with a `!vault` block. For a single `key: value`

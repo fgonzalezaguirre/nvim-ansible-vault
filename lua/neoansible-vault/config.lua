@@ -12,6 +12,11 @@ local M = {}
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field float neoansible-vault.FloatConfig
 
+---@class neoansible-vault.PickerConfig
+---@field enabled boolean Enable the secret picker
+---@field keymap string|nil Keymap (normal mode) to pick a secret in the current buffer
+---@field backend "auto"|"snacks"|"telescope"|"select" Picker backend (auto tries snacks, then telescope, then vim.ui.select)
+
 ---@class neoansible-vault.Config
 ---@field password string|nil Vault password set directly in config (use with care)
 ---@field password_file string|nil Explicit path to a vault password file or executable script
@@ -23,6 +28,7 @@ local M = {}
 ---@field cache_ttl integer Seconds to cache resolved passwords in memory (0 disables)
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field inline neoansible-vault.InlineConfig
+---@field picker neoansible-vault.PickerConfig
 
 ---@type neoansible-vault.Config
 M.defaults = {
@@ -44,6 +50,11 @@ M.defaults = {
       max_height = 0.6,
       border = "rounded",
     },
+  },
+  picker = {
+    enabled = true,
+    keymap = "<leader>vl",
+    backend = "auto",
   },
 }
 

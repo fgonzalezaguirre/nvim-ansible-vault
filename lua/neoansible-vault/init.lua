@@ -6,12 +6,18 @@ function M.setup(opts)
   local cfg = require("neoansible-vault.config").setup(opts)
   require("neoansible-vault.file").setup()
   require("neoansible-vault.inline").setup()
+  require("neoansible-vault.picker").setup()
   return cfg
 end
 
 ---Edit the inline `!vault` block under the cursor.
 function M.edit_inline()
   require("neoansible-vault.inline").edit()
+end
+
+---Pick an inline `!vault` secret in the current buffer and edit it.
+function M.pick_secret()
+  require("neoansible-vault.picker").pick()
 end
 
 ---Encrypt a range of lines into a `key: !vault |` block.

@@ -16,7 +16,5 @@
       (`:AnsibleVaultDecrypt`, `:AnsibleVaultEncrypt`)
 - [x] Tree-sitter based inline region detection
       (optional YAML parser filters false positives; line-based fallback)
-
-## Future ideas
-
-- telescope/snacks.nvim integration
+- [x] telescope/snacks.nvim integration
+      (`:AnsibleVaultSecrets` picker with `vim.ui.select` fallback)

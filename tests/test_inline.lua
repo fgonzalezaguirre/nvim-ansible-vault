@@ -158,4 +158,74 @@ function tests.encrypt_selection_multiline()
   reset()
 end
 
+function tests.encrypt_selection_with_vault_id()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local path = dir .. "/vars.yml"
+  h.write_file(path, "api_token: abc123\n")
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+
+  local orig_input = vim.ui.input
+  vim.ui.input = function(opts, cb)
+    cb(opts.default)
+  end
+  require("neoansible-vault").encrypt_selection(1, 1, "prod")
+  h.assert_true(h.wait_for(function()
+    return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
+  end), "selection was not encrypted")
+  vim.ui.input = orig_input
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local region = detect.inline_region_at(lines, 0)
+  h.assert_true(region ~= nil)
+  h.assert_true(region.blob_lines[1]:match("%$ANSIBLE_VAULT;1%.2;AES256;prod") ~= nil, "vault-id label applied")
+
+  local blob_path = dir .. "/blob.txt"
+  h.write_file(blob_path, detect.region_blob_text(region))
+  local code, out =
+    h.sys({ "ansible-vault", "decrypt", "--vault-id", "prod@" .. passfile, "--output", "-", blob_path })
+  h.assert_eq(code, 0)
+  h.assert_eq(out, "abc123")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.encrypt_selection_uses_config_vault_id()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, vault_id = "stage" })
+
+  local dir = h.tmpdir()
+  h.write_passfile(dir)
+  local path = dir .. "/vars.yml"
+  h.write_file(path, "api_token: abc123\n")
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+
+  local orig_input = vim.ui.input
+  vim.ui.input = function(opts, cb)
+    cb(opts.default)
+  end
+  require("neoansible-vault").encrypt_selection(1, 1)
+  h.assert_true(h.wait_for(function()
+    return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
+  end), "selection was not encrypted")
+  vim.ui.input = orig_input
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local region = detect.inline_region_at(lines, 0)
+  h.assert_true(region ~= nil)
+  h.assert_true(
+    region.blob_lines[1]:match("%$ANSIBLE_VAULT;1%.2;AES256;stage") ~= nil,
+    "config vault_id applied"
+  )
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 return tests

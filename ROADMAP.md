@@ -20,3 +20,5 @@
       (`:AnsibleVaultSecrets` picker with `vim.ui.select` fallback)
 - [x] rekey support
       (`:AnsibleVaultRekey` with vault-id label preservation)
+- [x] vault-id on encryption
+      (`vault_id` config + optional `[vault-id]` argument on encrypt commands)

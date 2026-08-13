@@ -26,6 +26,7 @@ local M = {}
 ---@field dotenv_name string Dotenv file name to discover walking up from the edited file
 ---@field prompt boolean Prompt for the password when no other source resolves
 ---@field cache_ttl integer Seconds to cache resolved passwords in memory (0 disables)
+---@field vault_id string|nil Default vault-id label for new encryptions
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field inline neoansible-vault.InlineConfig
 ---@field picker neoansible-vault.PickerConfig
@@ -40,6 +41,7 @@ M.defaults = {
   dotenv_name = ".env",
   prompt = true,
   cache_ttl = 900,
+  vault_id = nil,
   auto_decrypt = true,
   inline = {
     enabled = true,

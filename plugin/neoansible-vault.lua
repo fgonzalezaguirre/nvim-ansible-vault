@@ -17,16 +17,16 @@ vim.api.nvim_create_user_command("AnsibleVaultSecrets", function()
 end, { desc = "Pick a !vault secret in the current buffer" })
 
 vim.api.nvim_create_user_command("AnsibleVaultEncryptString", function(cmd)
-  require("neoansible-vault").encrypt_selection(cmd.line1, cmd.line2)
-end, { range = true, desc = "Encrypt lines/selection into a !vault block" })
+  require("neoansible-vault").encrypt_selection(cmd.line1, cmd.line2, cmd.args ~= "" and cmd.args or nil)
+end, { range = true, nargs = "?", desc = "Encrypt lines/selection into a !vault block ([vault-id] optional)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultDecrypt", function()
   require("neoansible-vault").decrypt_buffer()
 end, { desc = "Decrypt the current buffer (re-encrypts on write)" })
 
-vim.api.nvim_create_user_command("AnsibleVaultEncrypt", function()
-  require("neoansible-vault").encrypt_buffer()
-end, { desc = "Encrypt the current buffer, replacing it with ciphertext" })
+vim.api.nvim_create_user_command("AnsibleVaultEncrypt", function(cmd)
+  require("neoansible-vault").encrypt_buffer(cmd.args ~= "" and cmd.args or nil)
+end, { nargs = "?", desc = "Encrypt the current buffer, replacing it with ciphertext ([vault-id] optional)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultRekey", function()
   require("neoansible-vault").rekey_buffer()

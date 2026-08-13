@@ -194,7 +194,8 @@ function M.decrypt_buffer()
 end
 
 ---Explicitly encrypt the current buffer, replacing its content with ciphertext.
-function M.encrypt_buffer()
+---@param vault_id string|nil vault-id label (defaults to the buffer's current id, then config.vault_id)
+function M.encrypt_buffer(vault_id)
   local buf = vim.api.nvim_get_current_buf()
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   if detect.buffer_header(lines) then
@@ -204,7 +205,7 @@ function M.encrypt_buffer()
   local path = vim.api.nvim_buf_get_name(buf)
   local start_dir = path ~= "" and vim.fs.dirname(path) or (vim.uv or vim.loop).cwd()
   local state = get_state(buf)
-  local vault_id = state and state.vault_id or nil
+  vault_id = vault_id or (state and state.vault_id) or config.get().vault_id
 
   password.get({ start_dir = start_dir, vault_id = vault_id }, function(cred, err)
     if not cred then

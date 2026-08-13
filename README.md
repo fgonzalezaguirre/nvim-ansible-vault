@@ -71,6 +71,7 @@ require("neoansible-vault").setup({
   dotenv_name = ".env",                   -- discovered walking up from the file
   prompt = true,                -- interactive fallback
   cache_ttl = 900,              -- seconds to cache *prompted* passwords (0 = off)
+  vault_id = nil,               -- default vault-id label for new encryptions
   auto_decrypt = true,          -- transparent whole-file decrypt on read
   inline = {
     enabled = true,
@@ -117,7 +118,7 @@ The buffer shows a `[vault-id: x]` note when applicable.
 | Command | Action |
 | --- | --- |
 | `:AnsibleVaultDecrypt` | Decrypt the current buffer (re-encrypts on write) |
-| `:AnsibleVaultEncrypt` | Encrypt the current buffer, replacing it with ciphertext |
+| `:AnsibleVaultEncrypt [vault-id]` | Encrypt the current buffer, replacing it with ciphertext |
 | `:AnsibleVaultRekey` | Re-encrypt the file with a new password (and optionally a new vault-id) |
 | `:AnsibleVaultClearCache` | Forget cached (prompted) passwords |
 
@@ -139,6 +140,10 @@ db_password: !vault |
   `:'<,'>AnsibleVaultEncryptString` → prompts for a variable name and
   replaces the selection with a `!vault` block. For a single `key: value`
   line the key is pre-filled and only the value is encrypted.
+- Both `:AnsibleVaultEncryptString` and `:AnsibleVaultEncrypt` accept an
+  optional vault-id argument (`:AnsibleVaultEncryptString prod`) and fall
+  back to the `vault_id` config option; existing vault-ids are always
+  preserved on edit/write.
 
 ## Security notes
 

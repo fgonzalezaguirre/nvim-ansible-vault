@@ -176,7 +176,9 @@ end
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
-function M.encrypt_selection(line1, line2)
+---@param vault_id string|nil vault-id label (defaults to config.vault_id)
+function M.encrypt_selection(line1, line2, vault_id)
+  vault_id = vault_id or config.get().vault_id
   local buf = vim.api.nvim_get_current_buf()
   local lines = vim.api.nvim_buf_get_lines(buf, line1 - 1, line2, false)
   if #lines == 0 then
@@ -200,12 +202,12 @@ function M.encrypt_selection(line1, line2)
     if not key or key == "" then
       return
     end
-    password.get({ start_dir = buffer_dir(buf), vault_id = nil }, function(cred, err)
+    password.get({ start_dir = buffer_dir(buf), vault_id = vault_id }, function(cred, err)
       if not cred then
         notify_err(err or "no vault password available")
         return
       end
-      cli.encrypt_string(plaintext, key, cred, nil, function(enc_err, block)
+      cli.encrypt_string(plaintext, key, cred, vault_id, function(enc_err, block)
         if enc_err then
           notify_err("encryption failed: " .. enc_err)
           return

@@ -53,6 +53,26 @@ function tests.collect_empty_buffer()
   vim.api.nvim_buf_delete(buf, { force = true })
 end
 
+function tests.snacks_items_have_file_and_pos_for_preview()
+  local entries = { { key = "db_password", lnum = 5, vault_id = "prod", text = "db_password (line 5) [prod]" } }
+  local items = picker._snacks_items(entries, "/tmp/vars.yml")
+  h.assert_eq(#items, 1)
+  h.assert_eq(items[1].text, entries[1].text)
+  h.assert_eq(items[1].entry, entries[1])
+  h.assert_eq(items[1].file, "/tmp/vars.yml", "file set: snacks preview needs it")
+  h.assert_eq(items[1].pos, { 5, 0 }, "pos points at the secret line")
+end
+
+function tests.telescope_entry_has_filename_for_preview()
+  local e = { key = "db_password", lnum = 5, vault_id = nil, text = "db_password (line 5)" }
+  local entry = picker._telescope_entry(e, "/tmp/vars.yml")
+  h.assert_eq(entry.value, e)
+  h.assert_eq(entry.display, e.text)
+  h.assert_eq(entry.ordinal, "db_password")
+  h.assert_eq(entry.filename, "/tmp/vars.yml", "filename set: telescope preview needs it")
+  h.assert_eq(entry.lnum, 5)
+end
+
 function tests.pick_falls_back_to_vim_ui_select()
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)

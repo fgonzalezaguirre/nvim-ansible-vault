@@ -50,18 +50,29 @@ local function jump_and_edit(entry)
   require("neoansible-vault.inline").edit()
 end
 
+---Build snacks.nvim picker items. `file` and `pos` let the preview pane show
+---the buffer around the secret's line (without them snacks errors with
+---"Item has no file").
 ---@param entries neoansible-vault.PickerEntry[]
+---@param bufname string
+---@return table[]
+function M._snacks_items(entries, bufname)
+  return vim.tbl_map(function(e)
+    return { text = e.text, entry = e, file = bufname, pos = { e.lnum, 0 } }
+  end, entries)
+end
+
+---@param entries neoansible-vault.PickerEntry[]
+---@param bufname string
 ---@return boolean handled
-local function pick_snacks(entries)
+local function pick_snacks(entries, bufname)
   local ok, snacks = pcall(require, "snacks")
   if not ok or not snacks.picker then
     return false
   end
   snacks.picker.pick({
     title = "Ansible vault secrets",
-    items = vim.tbl_map(function(e)
-      return { text = e.text, entry = e }
-    end, entries),
+    items = M._snacks_items(entries, bufname),
     format = "text",
     confirm = function(picker, item)
       picker:close()
@@ -73,9 +84,19 @@ local function pick_snacks(entries)
   return true
 end
 
+---Build a telescope entry: `filename` + `lnum` give the default previewer
+---buffer context around the secret.
+---@param e neoansible-vault.PickerEntry
+---@param bufname string
+---@return table
+function M._telescope_entry(e, bufname)
+  return { value = e, display = e.text, ordinal = e.key, filename = bufname, lnum = e.lnum }
+end
+
 ---@param entries neoansible-vault.PickerEntry[]
+---@param bufname string
 ---@return boolean handled
-local function pick_telescope(entries)
+local function pick_telescope(entries, bufname)
   local ok = pcall(require, "telescope.pickers")
   if not ok then
     return false
@@ -91,7 +112,7 @@ local function pick_telescope(entries)
       finder = finders.new_table({
         results = entries,
         entry_maker = function(e)
-          return { value = e, display = e.text, ordinal = e.key, lnum = e.lnum }
+          return M._telescope_entry(e, bufname)
         end,
       }),
       sorter = conf.generic_sorter({}),
@@ -132,10 +153,11 @@ function M.pick()
     notify("no !vault secrets in this buffer", vim.log.levels.WARN)
     return
   end
+  local bufname = vim.api.nvim_buf_get_name(buf)
 
   local backend = config.get().picker.backend
   if backend == "snacks" or backend == "auto" then
-    if pick_snacks(entries) then
+    if pick_snacks(entries, bufname) then
       return
     elseif backend == "snacks" then
       notify("snacks.nvim picker not available", vim.log.levels.ERROR)
@@ -143,7 +165,7 @@ function M.pick()
     end
   end
   if backend == "telescope" or backend == "auto" then
-    if pick_telescope(entries) then
+    if pick_telescope(entries, bufname) then
       return
     elseif backend == "telescope" then
       notify("telescope.nvim not available", vim.log.levels.ERROR)

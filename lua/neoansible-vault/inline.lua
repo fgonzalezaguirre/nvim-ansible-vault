@@ -276,6 +276,10 @@ function M.setup()
     require("neoansible-vault.keymaps").setup(group, cfg.keymap, function()
       M.edit()
     end, "Edit ansible vault secret under cursor")
+    require("neoansible-vault.keymaps").setup(group, cfg.encrypt_keymap, function()
+      local row = vim.api.nvim_win_get_cursor(0)[1]
+      M.encrypt_selection(row, row)
+    end, "Encrypt the value/line under cursor into a !vault block")
   end
   if cfg.enabled and cfg.hover then
     -- Global on purpose: buffer-local (e.g. LSP hover) K mappings still take

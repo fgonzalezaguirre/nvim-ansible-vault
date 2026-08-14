@@ -22,6 +22,20 @@
       (`:AnsibleVaultRekey` with vault-id label preservation)
 - [x] vault-id on encryption
       (`vault_id` config + optional `[vault-id]` argument on encrypt commands)
+- [x] multi-vault password sources
+      (per-id `vault_ids` config; `ansible.cfg` `vault_identity_list` and
+      `vault_password_file`; `$ANSIBLE_VAULT_IDENTITY_LIST`; `$ANSIBLE_CONFIG`;
+      `@prompt` identities; `.vault_pass` discovery alias; vault-id picker and
+      command completion for new encryptions)
+- [x] new vault-ids and one-off passwords on encryption
+      (`[vault-id]` args accept any label, picker offers "(new id…)";
+      `:AnsibleVaultEncrypt[!]` / `:AnsibleVaultEncryptString[!]` bang skips
+      all password sources and prompts for a one-off password that replaces
+      the cached one)
+- [x] confirm-before-encrypt (`confirm_default`, default on)
+      (every encryption flow asks whether to use the default vault/password,
+      a known vault-id, or a new id; explicit `[vault-id]` args skip the
+      question; set to false for silent default behavior)
 - [x] statusline component
       (`require("neoansible-vault").status()` → `[vault]` / `[vault:<id>]`)
 - [x] lazy.nvim integration

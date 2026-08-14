@@ -54,7 +54,7 @@ local function decrypt_block(lines, key, passfile, dir, name)
 end
 
 function tests.reveal_shows_plaintext_and_write_reencrypts()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local buf, dir, passfile = edit_secrets_file()
 
   require("neoansible-vault").toggle_reveal()
@@ -113,7 +113,7 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
 end
 
 function tests.reveal_multiline_roundtrip()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
   local block = h.vault_encrypt_string("line one\nline two", "cert", passfile)
@@ -150,7 +150,7 @@ function tests.reveal_multiline_roundtrip()
 end
 
 function tests.reveal_without_secrets_notifies()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local dir = h.tmpdir()
   local path = dir .. "/plain.yml"
   h.write_file(path, "k: v\n")

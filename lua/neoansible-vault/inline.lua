@@ -377,9 +377,10 @@ end
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
----@param vault_id string|nil vault-id label (defaults to config.vault_id)
-function M.encrypt_selection(line1, line2, vault_id)
-  vault_id = vault_id or config.get().vault_id
+---@param vault_id string|nil vault-id label (config.vault_id / picker when nil)
+---@param opts { force_prompt: boolean|nil }|nil force_prompt: ask for a one-off password
+function M.encrypt_selection(line1, line2, vault_id, opts)
+  opts = opts or {}
   local buf = vim.api.nvim_get_current_buf()
   local lines = vim.api.nvim_buf_get_lines(buf, line1 - 1, line2, false)
   if #lines == 0 then
@@ -399,29 +400,37 @@ function M.encrypt_selection(line1, line2, vault_id)
     end
   end
 
-  vim.ui.input({ prompt = "Variable name: ", default = default_key }, function(key)
-    if not key or key == "" then
-      return
-    end
-    password.get({ start_dir = buffer_dir(buf), vault_id = vault_id }, function(cred, err)
-      if not cred then
-        notify_err(err or "no vault password available")
+  local function with_vault_id(id)
+    vim.ui.input({ prompt = "Variable name: ", default = default_key }, function(key)
+      if not key or key == "" then
         return
       end
-      cli.encrypt_string(plaintext, key, cred, vault_id, function(enc_err, block)
-        if enc_err then
-          notify_err("encryption failed: " .. enc_err)
+      password.get({ start_dir = buffer_dir(buf), vault_id = id, force_prompt = opts.force_prompt }, function(cred, err)
+        if not cred then
+          notify_err(err or "no vault password available")
           return
         end
-        if not vim.api.nvim_buf_is_valid(buf) then
-          return
-        end
-        local new_lines = M.indent_block(block, indent, indent + 2)
-        vim.api.nvim_buf_set_lines(buf, line1 - 1, line2, false, new_lines)
-        notify(("encrypted %s"):format(key), vim.log.levels.INFO)
+        cli.encrypt_string(plaintext, key, cred, id, function(enc_err, block)
+          if enc_err then
+            notify_err("encryption failed: " .. enc_err)
+            return
+          end
+          if not vim.api.nvim_buf_is_valid(buf) then
+            return
+          end
+          local new_lines = M.indent_block(block, indent, indent + 2)
+          vim.api.nvim_buf_set_lines(buf, line1 - 1, line2, false, new_lines)
+          notify(("encrypted %s%s"):format(key, id and (" [vault-id: " .. id .. "]") or ""), vim.log.levels.INFO)
+        end)
       end)
     end)
-  end)
+  end
+
+  if vault_id then
+    with_vault_id(vault_id)
+  else
+    require("neoansible-vault.ids").pick(buf, with_vault_id)
+  end
 end
 
 ---Toggle the cursor line: decrypt the `!vault` block under the cursor, or

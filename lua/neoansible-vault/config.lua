@@ -27,16 +27,22 @@ local M = {}
 ---@class neoansible-vault.ConcealConfig
 ---@field enabled boolean Conceal the hex body of inline `!vault` blocks
 
+---@class neoansible-vault.VaultIdConfig
+---@field password string|nil Password for this vault-id, set directly (use with care)
+---@field password_file string|nil Password file or executable script for this vault-id
+
 ---@class neoansible-vault.Config
 ---@field password string|nil Vault password set directly in config (use with care)
 ---@field password_file string|nil Explicit path to a vault password file or executable script
 ---@field env_password_var string Environment variable holding the password directly
 ---@field env_password_file_var string Environment variable holding a password file path
----@field password_file_name string File name to discover walking up from the edited file
+---@field password_file_name string|string[] File name(s) to discover walking up from the edited file
 ---@field dotenv_name string Dotenv file name to discover walking up from the edited file
 ---@field prompt boolean Prompt for the password when no other source resolves
 ---@field cache_ttl integer Seconds to cache resolved passwords in memory (0 disables)
 ---@field vault_id string|nil Default vault-id label for new encryptions
+---@field vault_ids table<string, neoansible-vault.VaultIdConfig> Per-vault-id password sources
+---@field confirm_default boolean Ask which vault-id to use for every new encryption (off = silently use the default)
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field keymap_filetypes string[] Filetypes that get the buffer-local keymaps
 ---@field inline neoansible-vault.InlineConfig
@@ -50,11 +56,13 @@ M.defaults = {
   password_file = nil,
   env_password_var = "ANSIBLE_VAULT_PASSWORD",
   env_password_file_var = "ANSIBLE_VAULT_PASSWORD_FILE",
-  password_file_name = ".vault-password",
+  password_file_name = { ".vault-password", ".vault_pass" },
   dotenv_name = ".env",
   prompt = true,
   cache_ttl = 900,
   vault_id = nil,
+  vault_ids = {},
+  confirm_default = true,
   auto_decrypt = true,
   keymap_filetypes = { "yaml", "yaml.ansible" },
   inline = {

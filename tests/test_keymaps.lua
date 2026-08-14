@@ -15,7 +15,7 @@ end
 local EXPECTED = { "<leader>ve", "<leader>vf", "<leader>vF", "<leader>vr", "<leader>vR" }
 
 function tests.keymaps_are_buffer_local_to_yaml()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local dir = h.tmpdir()
 
   local yml = dir .. "/vars.yml"
@@ -39,7 +39,7 @@ function tests.keymaps_are_buffer_local_to_yaml()
 end
 
 function tests.keymaps_apply_to_ansible_filetype()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   vim.cmd.runtime("ftdetect/ansible.lua")
   local dir = h.tmpdir()
 
@@ -55,7 +55,7 @@ function tests.keymaps_apply_to_ansible_filetype()
 end
 
 function tests.toggle_encrypts_line_under_cursor()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local dir = h.tmpdir()
   h.write_passfile(dir)
   local path = dir .. "/vars.yml"

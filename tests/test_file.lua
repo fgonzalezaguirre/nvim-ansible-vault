@@ -5,7 +5,7 @@ local h = require("helpers")
 local tests = {}
 
 local function reset()
-  config.setup({ prompt = false })
+  config.setup({ prompt = false, confirm_default = false })
   password.clear_cache()
   vim.env.ANSIBLE_VAULT_PASSWORD = nil
   vim.env.ANSIBLE_VAULT_PASSWORD_FILE = nil
@@ -31,7 +31,7 @@ end
 
 function tests.transparent_decrypt_on_open()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -53,7 +53,7 @@ end
 
 function tests.write_reencrypts_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -83,7 +83,7 @@ end
 
 function tests.vault_id_file_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -114,7 +114,7 @@ end
 
 function tests.rekey_changes_password_and_preserves_vault_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -181,7 +181,7 @@ end
 
 function tests.status_component()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -201,7 +201,7 @@ function tests.status_component()
   h.assert_eq(require("neoansible-vault").status(prod_buf), "[vault:prod]")
 
   -- encrypted file without id, auto_decrypt off: ciphertext -> [vault]
-  require("neoansible-vault").setup({ prompt = false, auto_decrypt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, auto_decrypt = false })
   local enc = dir .. "/enc.yml"
   h.write_file(enc, "k: v\n")
   h.vault_encrypt(enc, passfile)
@@ -219,7 +219,7 @@ end
 
 function tests.non_vault_file_untouched()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   h.write_passfile(dir)
@@ -241,7 +241,7 @@ end
 
 function tests.wrong_password_leaves_ciphertext()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir, "right-password")
@@ -264,7 +264,7 @@ end
 
 function tests.explicit_decrypt_and_encrypt_buffer()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)

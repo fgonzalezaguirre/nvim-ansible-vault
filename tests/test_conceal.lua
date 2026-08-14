@@ -19,7 +19,7 @@ local function edit_vault_file()
 end
 
 function tests.conceal_marks_blob_lines()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
   local buf = edit_vault_file()
 
   conceal.refresh(buf)
@@ -53,7 +53,7 @@ function tests.conceal_marks_blob_lines()
 end
 
 function tests.conceal_disabled_is_noop()
-  require("neoansible-vault").setup({ prompt = false, conceal = { enabled = false } })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, conceal = { enabled = false } })
   local buf = edit_vault_file()
 
   conceal.refresh(buf)
@@ -61,7 +61,7 @@ function tests.conceal_disabled_is_noop()
   h.assert_eq(vim.wo.conceallevel, 0)
 
   vim.cmd.bwipeout({ bang = true })
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
 end
 
 return tests

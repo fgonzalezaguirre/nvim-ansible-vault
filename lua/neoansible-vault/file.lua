@@ -194,8 +194,10 @@ function M.decrypt_buffer()
 end
 
 ---Explicitly encrypt the current buffer, replacing its content with ciphertext.
----@param vault_id string|nil vault-id label (defaults to the buffer's current id, then config.vault_id)
-function M.encrypt_buffer(vault_id)
+---@param vault_id string|nil vault-id label (defaults to the buffer's current id, then config.vault_id / picker)
+---@param opts { force_prompt: boolean|nil }|nil force_prompt: ask for a one-off password
+function M.encrypt_buffer(vault_id, opts)
+  opts = opts or {}
   local buf = vim.api.nvim_get_current_buf()
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   if detect.buffer_header(lines) then
@@ -205,52 +207,60 @@ function M.encrypt_buffer(vault_id)
   local path = vim.api.nvim_buf_get_name(buf)
   local start_dir = path ~= "" and vim.fs.dirname(path) or (vim.uv or vim.loop).cwd()
   local state = get_state(buf)
-  vault_id = vault_id or (state and state.vault_id) or config.get().vault_id
 
-  password.get({ start_dir = start_dir, vault_id = vault_id }, function(cred, err)
-    if not cred then
-      notify_err(err or "no vault password available")
-      return
-    end
-    local text = table.concat(lines, "\n")
-    if vim.bo[buf].endofline then
-      text = text .. "\n"
-    end
-    local uv = vim.uv or vim.loop
-    local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-enc-XXXXXX")
-    if not fd then
-      notify_err("failed to create temp file for encryption")
-      return
-    end
-    uv.fs_write(fd, text, 0)
-    uv.fs_close(fd)
-    local out = tmp .. ".out"
-    cli.encrypt_file(tmp, out, cred, vault_id, function(enc_err)
-      pcall(os.remove, tmp)
-      if not vim.api.nvim_buf_is_valid(buf) then
-        pcall(os.remove, out)
+  local function with_vault_id(id)
+    password.get({ start_dir = start_dir, vault_id = id, force_prompt = opts.force_prompt }, function(cred, err)
+      if not cred then
+        notify_err(err or "no vault password available")
         return
       end
-      if enc_err then
-        pcall(os.remove, out)
-        notify_err("encryption failed: " .. enc_err)
+      local text = table.concat(lines, "\n")
+      if vim.bo[buf].endofline then
+        text = text .. "\n"
+      end
+      local uv = vim.uv or vim.loop
+      local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-enc-XXXXXX")
+      if not fd then
+        notify_err("failed to create temp file for encryption")
         return
       end
-      local fd_out = io.open(out, "r")
-      local ciphertext = fd_out and fd_out:read("*a") or ""
-      if fd_out then
-        fd_out:close()
-      end
-      pcall(os.remove, out)
-      vim.api.nvim_buf_set_lines(buf, 0, -1, false, to_lines(ciphertext))
-      vim.bo[buf].modified = true
-      -- The buffer now holds ciphertext: drop the transparent-write hook.
-      vim.b[buf].neoansible_vault = nil
-      vim.bo[buf].buftype = ""
-      vim.api.nvim_clear_autocmds({ group = group, buffer = buf, event = "BufWriteCmd" })
-      notify("buffer encrypted; write to save the ciphertext", vim.log.levels.INFO)
+      uv.fs_write(fd, text, 0)
+      uv.fs_close(fd)
+      local out = tmp .. ".out"
+      cli.encrypt_file(tmp, out, cred, id, function(enc_err)
+        pcall(os.remove, tmp)
+        if not vim.api.nvim_buf_is_valid(buf) then
+          pcall(os.remove, out)
+          return
+        end
+        if enc_err then
+          pcall(os.remove, out)
+          notify_err("encryption failed: " .. enc_err)
+          return
+        end
+        local fd_out = io.open(out, "r")
+        local ciphertext = fd_out and fd_out:read("*a") or ""
+        if fd_out then
+          fd_out:close()
+        end
+        pcall(os.remove, out)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, to_lines(ciphertext))
+        vim.bo[buf].modified = true
+        -- The buffer now holds ciphertext: drop the transparent-write hook.
+        vim.b[buf].neoansible_vault = nil
+        vim.bo[buf].buftype = ""
+        vim.api.nvim_clear_autocmds({ group = group, buffer = buf, event = "BufWriteCmd" })
+        notify("buffer encrypted; write to save the ciphertext", vim.log.levels.INFO)
+      end)
     end)
-  end)
+  end
+
+  vault_id = vault_id or (state and state.vault_id)
+  if vault_id then
+    with_vault_id(vault_id)
+  else
+    require("neoansible-vault.ids").pick(buf, with_vault_id)
+  end
 end
 
 ---Rekey the vault file backing the current buffer: re-encrypt it with a new

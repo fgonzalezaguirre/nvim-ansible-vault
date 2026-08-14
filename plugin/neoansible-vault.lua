@@ -25,8 +25,21 @@ vim.api.nvim_create_user_command("AnsibleVaultFiles", function()
 end, { desc = "Pick a vault-encrypted file in the project" })
 
 vim.api.nvim_create_user_command("AnsibleVaultEncryptString", function(cmd)
-  require("neoansible-vault").encrypt_selection(cmd.line1, cmd.line2, cmd.args ~= "" and cmd.args or nil)
-end, { range = true, nargs = "?", desc = "Encrypt lines/selection into a !vault block ([vault-id] optional)" })
+  require("neoansible-vault").encrypt_selection(
+    cmd.line1,
+    cmd.line2,
+    cmd.args ~= "" and cmd.args or nil,
+    { force_prompt = cmd.bang }
+  )
+end, {
+  range = true,
+  nargs = "?",
+  bang = true,
+  complete = function(arglead)
+    return require("neoansible-vault.ids").complete(0)(arglead)
+  end,
+  desc = "Encrypt lines/selection into a !vault block ([vault-id] optional, ! asks for a one-off password)",
+})
 
 vim.api.nvim_create_user_command("AnsibleVaultDecryptString", function()
   require("neoansible-vault").decrypt_inline()
@@ -41,8 +54,15 @@ vim.api.nvim_create_user_command("AnsibleVaultDecrypt", function()
 end, { desc = "Decrypt the current buffer (re-encrypts on write)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultEncrypt", function(cmd)
-  require("neoansible-vault").encrypt_buffer(cmd.args ~= "" and cmd.args or nil)
-end, { nargs = "?", desc = "Encrypt the current buffer, replacing it with ciphertext ([vault-id] optional)" })
+  require("neoansible-vault").encrypt_buffer(cmd.args ~= "" and cmd.args or nil, { force_prompt = cmd.bang })
+end, {
+  nargs = "?",
+  bang = true,
+  complete = function(arglead)
+    return require("neoansible-vault.ids").complete(0)(arglead)
+  end,
+  desc = "Encrypt the current buffer, replacing it with ciphertext ([vault-id] optional, ! asks for a one-off password)",
+})
 
 vim.api.nvim_create_user_command("AnsibleVaultRekey", function()
   require("neoansible-vault").rekey_buffer()

@@ -65,11 +65,19 @@ Options ~
   password_file         Path to a vault password file or executable script.
   env_password_var      Environment variable holding the password itself.
   env_password_file_var Environment variable holding a password file path.
-  password_file_name    File name discovered walking up from the edited file.
+  password_file_name    File name(s) discovered walking up from the edited
+                        file. Default: { ".vault-password", ".vault_pass" }.
   dotenv_name           Dotenv file name discovered the same way.
   prompt                Prompt interactively when nothing else resolves.
   cache_ttl             Seconds prompted passwords are cached (0 disables).
   vault_id              Default vault-id label for new encryptions.
+  vault_ids             Per-vault-id password sources, e.g. >lua
+                        vault_ids = { prod = { password_file = "~/.v-prod" } }
+<
+  confirm_default       Ask which vault-id to use for every new encryption
+                        (default true). When false, the default (vault_id or
+                        unlabeled) is used silently and the picker only
+                        appears when identities are known.
   auto_decrypt          Transparently decrypt vault files on read.
   keymap_filetypes      Filetypes whose buffers get the keymaps (buffer-
                         local). Default: { "yaml", "yaml.ansible" }.
@@ -106,16 +114,36 @@ Options ~
 ==============================================================================
 3. PASSWORDS                                      *neoansible-vault-passwords*
 
-Resolution order (first hit wins):
+For a given vault-id, id-specific sources win; otherwise the default chain
+applies (mirroring ansible, which tries every available secret):
 
-  1. `password` from setup()
-  2. $ANSIBLE_VAULT_PASSWORD
-  3. `password_file` from setup()
-  4. $ANSIBLE_VAULT_PASSWORD_FILE
-  5. `.env` files walking up from the file's directory
+  1. `vault_ids[id]` from setup()
+  2. `vault_identity_list` (ansible.cfg via $ANSIBLE_CONFIG or discovered
+     walking up, or $ANSIBLE_VAULT_IDENTITY_LIST)
+  3. `password` from setup()
+  4. $ANSIBLE_VAULT_PASSWORD
+  5. `password_file` from setup()
+  6. $ANSIBLE_VAULT_PASSWORD_FILE
+  7. `vault_password_file` from ansible.cfg
+  8. `.env` files walking up from the file's directory
      (ANSIBLE_VAULT_PASSWORD or ANSIBLE_VAULT_PASSWORD_FILE)
-  6. `.vault-password` files walking up the same way
-  7. Interactive prompt
+  9. `.vault-password` / `.vault_pass` files walking up the same way
+  10. Interactive prompt
+
+Identity list entries look like `prod@~/.vault-pass-prod`, `dev@script.sh`,
+or `stag@prompt` (interactive, cached per directory). Relative paths resolve
+against the ansible.cfg location. Executable password scripts are run by
+ansible-vault itself, so password-manager integrations work.
+
+When creating new ciphertext the label is chosen as follows: an explicit
+[vault-id] command argument always wins (any label is accepted; known ids
+are offered by completion). Otherwise, with `confirm_default` (default
+true), every encryption flow asks: the default — "(default)", or "(default:
+id)" when vault_id is set — plus all known ids and "(new id…)". With
+`confirm_default = false` the default is used silently and the picker only
+appears when identities are known. A bang on the encrypt commands skips all
+password sources and asks for a one-off password. Existing ciphertext
+always keeps its own label when re-encrypted.
 
 The upward search never considers the home directory. Prompted passwords are
 cached in memory only, scoped per directory tree. Raw passwords are passed
@@ -148,22 +176,30 @@ to ansible-vault via a 0600 temp file deleted after each call.
                         corruption.
 
                                                 *:AnsibleVaultEncryptString*
-:[range]AnsibleVaultEncryptString [vault-id]
+:[range]AnsibleVaultEncryptString[!] [vault-id]
                         Encrypt [range] lines into a `key: !vault |` block.
                         Prompts for the variable name; a single `key: value`
                         line pre-fills the key and encrypts only the value.
                         The optional [vault-id] argument (or the vault_id
-                        option) labels the new secret.
+                        option) labels the new secret; any label is accepted
+                        and known ids are offered by completion. With a bang
+                        (!) all password sources and the cache are skipped
+                        and a one-off password is requested.
 
                                                      *:AnsibleVaultDecrypt*
 :AnsibleVaultDecrypt    Decrypt the current buffer in place. The buffer is
                         re-encrypted on write.
 
                                                       *:AnsibleVaultEncrypt*
-:AnsibleVaultEncrypt [vault-id]
+:AnsibleVaultEncrypt[!] [vault-id]
                         Encrypt the current buffer, replacing its content
                         with vault ciphertext. The optional [vault-id]
-                        argument (or the vault_id option) labels the file.
+                        argument (or the vault_id option) labels the file;
+                        any label is accepted and known ids are offered by
+                        completion. With a bang (!) all password sources and
+                        the cache are skipped and a one-off password is
+                        requested. The prompted password replaces any cached
+                        entry for that vault-id and directory.
 
                                                 *:AnsibleVaultDecryptString*
 :AnsibleVaultDecryptString

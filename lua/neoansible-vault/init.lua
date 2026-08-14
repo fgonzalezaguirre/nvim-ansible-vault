@@ -35,9 +35,10 @@ end
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
----@param vault_id string|nil vault-id label (defaults to config.vault_id)
-function M.encrypt_selection(line1, line2, vault_id)
-  require("neoansible-vault.inline").encrypt_selection(line1, line2, vault_id)
+---@param vault_id string|nil vault-id label (defaults to config.vault_id / picker)
+---@param opts { force_prompt: boolean|nil }|nil force_prompt: ask for a one-off password
+function M.encrypt_selection(line1, line2, vault_id, opts)
+  require("neoansible-vault.inline").encrypt_selection(line1, line2, vault_id, opts)
 end
 
 ---Decrypt the `!vault` block under the cursor into plaintext lines.
@@ -56,9 +57,10 @@ function M.decrypt_buffer()
 end
 
 ---Encrypt the current buffer, replacing its content with ciphertext.
----@param vault_id string|nil vault-id label (defaults to config.vault_id)
-function M.encrypt_buffer(vault_id)
-  require("neoansible-vault.file").encrypt_buffer(vault_id)
+---@param vault_id string|nil vault-id label (defaults to config.vault_id / picker)
+---@param opts { force_prompt: boolean|nil }|nil force_prompt: ask for a one-off password
+function M.encrypt_buffer(vault_id, opts)
+  require("neoansible-vault.file").encrypt_buffer(vault_id, opts)
 end
 
 ---Rekey the vault file backing the current buffer with a new password.

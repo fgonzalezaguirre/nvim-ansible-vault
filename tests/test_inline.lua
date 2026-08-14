@@ -31,7 +31,7 @@ end
 
 function tests.edit_decrypts_into_float_and_reencrypts_on_save()
   reset()
-  require("neoansible-vault").setup({ prompt = false })
+  require("neoansible-vault").setup({ prompt = false, inline = { editor = "float" } })
 
   local buf, dir, passfile = make_yaml_buffer("original-secret")
   vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- inside the blob
@@ -76,6 +76,83 @@ function tests.edit_decrypts_into_float_and_reencrypts_on_save()
   h.assert_eq(code, 0)
   h.assert_eq(out, "updated-secret")
 
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.edit_single_line_uses_input_dialog()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local buf, dir, passfile = make_yaml_buffer("original-secret")
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+
+  local seen_default = nil
+  local orig_input = vim.ui.input
+  vim.ui.input = function(opts, cb)
+    seen_default = opts.default
+    cb("updated-secret")
+  end
+  require("neoansible-vault").edit_inline()
+  h.assert_true(
+    h.wait_for(function()
+      return seen_default ~= nil
+    end),
+    "input dialog was not shown"
+  )
+  vim.ui.input = orig_input
+
+  h.assert_eq(seen_default, "original-secret", "input dialog pre-filled with the current value")
+  h.assert_eq(h.find_win("ansible%-vault://"), nil, "no float opened for a single-line value")
+
+  -- wait for the async re-encryption to land in the buffer
+  local blob_path = dir .. "/blob.txt"
+  local out = nil
+  h.assert_true(
+    h.wait_for(function()
+      local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+      local region = detect.inline_region_at(lines, 1)
+      if not region then
+        return false
+      end
+      h.write_file(blob_path, detect.region_blob_text(region))
+      local code
+      code, out = h.sys({ "ansible-vault", "decrypt", "--vault-password-file", passfile, "--output", "-", blob_path })
+      return code == 0 and out == "updated-secret"
+    end),
+    "block was not re-encrypted with the new value"
+  )
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.edit_multiline_falls_back_to_float()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local buf = make_yaml_buffer("line one\nline two")
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+
+  local input_called = false
+  local orig_input = vim.ui.input
+  vim.ui.input = function(_, cb)
+    input_called = true
+    cb(nil)
+  end
+  require("neoansible-vault").edit_inline()
+  local win = nil
+  h.assert_true(
+    h.wait_for(function()
+      win = h.find_win("ansible%-vault://db_password")
+      return win ~= nil
+    end),
+    "float did not open for a multi-line value"
+  )
+  vim.ui.input = orig_input
+  h.assert_true(not input_called, "input dialog not used for multi-line values")
+
+  pcall(vim.api.nvim_win_close, win, true)
   vim.cmd.bwipeout({ bang = true })
   reset()
 end

@@ -75,6 +75,32 @@ local function apply_highlights()
   vim.api.nvim_set_hl(0, "NeoAnsibleVaultBorder", { link = "FloatBorder", default = true })
 end
 
+---Re-encrypt `plain` back into the source buffer's region.
+---@param src_buf integer
+---@param region neoansible-vault.InlineRegion
+---@param cred neoansible-vault.Credential
+---@param vault_id string|nil
+---@param plain string
+---@param on_success fun()|nil
+local function reencrypt(src_buf, region, cred, vault_id, plain, on_success)
+  cli.encrypt_string(plain, region.key, cred, vault_id, function(err, block)
+    if err then
+      notify_err("re-encryption failed: " .. err)
+      return
+    end
+    if not vim.api.nvim_buf_is_valid(src_buf) then
+      notify_err("source buffer is gone; discarding changes")
+      return
+    end
+    local new_lines = M.indent_block(block, region.key_indent, region.blob_indent)
+    vim.api.nvim_buf_set_lines(src_buf, region.start_row, region.end_row, false, new_lines)
+    if on_success then
+      on_success()
+    end
+    notify(("re-encrypted %s"):format(region.key), vim.log.levels.INFO)
+  end)
+end
+
 ---Open the decrypted secret in a floating window.
 ---@param src_buf integer
 ---@param region neoansible-vault.InlineRegion
@@ -172,20 +198,9 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
 
   local function save()
     local plain = table.concat(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false), "\n")
-    cli.encrypt_string(plain, region.key, cred, vault_id, function(err, block)
-      if err then
-        notify_err("re-encryption failed: " .. err)
-        return
-      end
-      if not vim.api.nvim_buf_is_valid(src_buf) then
-        notify_err("source buffer is gone; discarding changes")
-        return
-      end
-      local new_lines = M.indent_block(block, region.key_indent, region.blob_indent)
-      vim.api.nvim_buf_set_lines(src_buf, region.start_row, region.end_row, false, new_lines)
+    reencrypt(src_buf, region, cred, vault_id, plain, function()
       vim.bo[fbuf].modified = false
       close()
-      notify(("re-encrypted %s"):format(region.key), vim.log.levels.INFO)
     end)
   end
 
@@ -238,6 +253,22 @@ function M.edit()
         return
       end
       if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+      -- single-line values edit in vim.ui.input (snacks.input when installed);
+      -- multi-line values need the float
+      local value = plaintext:gsub("\n$", "")
+      local editor = config.get().inline.editor
+      if editor ~= "float" and not value:find("\n", 1, true) then
+        vim.ui.input({
+          prompt = ("vault: %s%s "):format(region.key, vault_id and (" [" .. vault_id .. "]") or ""),
+          default = value,
+        }, function(input)
+          if input == nil then
+            return -- cancelled
+          end
+          reencrypt(buf, region, cred, vault_id, input)
+        end)
         return
       end
       open_float(buf, region, plaintext, cred, vault_id)

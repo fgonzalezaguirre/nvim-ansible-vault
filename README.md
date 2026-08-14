@@ -103,6 +103,9 @@ require("neoansible-vault").setup({
   keymap_filetypes = { "yaml", "yaml.ansible" }, -- buffers that get keymaps
   inline = {
     enabled = true,
+    editor = "auto",            -- "auto": vim.ui.input (snacks.input) for
+                                -- single-line values, float for multi-line;
+                                -- or force "input" / "float"
     treesitter = true,          -- use YAML tree-sitter parser to avoid false
                                 -- positives when available (optional)
     hover = true,               -- K shows a decrypted preview on vault blocks
@@ -174,8 +177,10 @@ db_password: !vault |
   encrypts the value; cursor on a `!vault` block → `<leader>ve` decrypts it
   back to plaintext. (Same as `:AnsibleVaultToggle`.)
 - Cursor anywhere on the block → `<leader>vr` or `:AnsibleVaultEdit` →
-  floating window with the plaintext. `<CR>`/`:w` saves and re-encrypts,
-  `<Esc>`/`q` cancels.
+  single-line values open in `vim.ui.input` (the snacks.input dialog when
+  installed, same as the variable-name prompt) pre-filled with the current
+  value; multi-line values open in the floating editor. `<CR>`/`:w` saves
+  and re-encrypts, `<Esc>`/`q` cancels. (`inline.editor` to force one.)
 - `<leader>vf` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
   buffer (snacks.nvim or telescope if installed, `vim.ui.select` otherwise)
   and opens the chosen one in the edit float.

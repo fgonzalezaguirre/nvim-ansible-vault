@@ -8,6 +8,7 @@ local M = {}
 
 ---@class neoansible-vault.InlineConfig
 ---@field enabled boolean Enable inline `!vault` editing
+---@field editor "auto"|"input"|"float" Value editor: "auto" uses vim.ui.input for single-line values, the float otherwise
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field hover boolean Map K to a decrypted hover preview on vault blocks (falls back to default K)
 ---@field float neoansible-vault.FloatConfig
@@ -58,6 +59,7 @@ M.defaults = {
   keymap_filetypes = { "yaml", "yaml.ansible" },
   inline = {
     enabled = true,
+    editor = "auto",
     treesitter = true,
     hover = true,
     float = {

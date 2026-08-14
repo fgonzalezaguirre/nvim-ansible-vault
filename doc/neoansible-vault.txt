@@ -74,6 +74,11 @@ Options ~
   keymap_filetypes      Filetypes whose buffers get the keymaps (buffer-
                         local). Default: { "yaml", "yaml.ansible" }.
   inline.enabled        Enable inline `!vault` editing.
+  inline.editor         Value editor for |:AnsibleVaultEdit|: "auto" uses
+                        |vim.ui.input()| (snacks.input when installed) for
+                        single-line values and the floating editor for
+                        multi-line values; "input" or "float" forces one
+                        (multi-line values always use the float).
   inline.treesitter     Use tree-sitter (YAML parser) to reject false-positive
                         `!vault` matches (e.g. inside block scalars or
                         comments) when a parser is available. Falls back to

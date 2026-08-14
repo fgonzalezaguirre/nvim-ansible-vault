@@ -36,6 +36,18 @@
       (every encryption flow asks whether to use the default vault/password,
       a known vault-id, or a new id; explicit `[vault-id]` args skip the
       question; set to false for silent default behavior)
+- [x] snacks.nvim explorer integration
+      (encrypt/decrypt file toggle action in the explorer bound to
+      `<leader>avV`, in-place on disk; lock icons for vault-encrypted files
+      in snacks pickers; `snacks.explorer` / `snacks.icons` config toggles)
+- [x] `<leader>av` namespace with unified toggles
+      (`<leader>avv` secret toggle, `<leader>avV` buffer toggle by state,
+      `<leader>avf/avF` find buffer/project, `<leader>ave/avE` edit
+      secret/buffer, `<leader>avk/avK` rekey secret/buffer; inline secret
+      rekey implemented via decrypt + encrypt_string round-trip)
+- [x] decrypt confirmation (`confirm_decrypt`, default on)
+      (opening a vault file asks "Decrypt <file>?" first; "keep encrypted"
+      leaves ciphertext untouched; set to false to decrypt immediately)
 - [x] statusline component
       (`require("neoansible-vault").status()` → `[vault]` / `[vault:<id>]`)
 - [x] lazy.nvim integration

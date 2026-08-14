@@ -70,11 +70,14 @@ not create.
   -- load before any file read so vault files decrypt transparently on open
   event = "BufReadPre",
   keys = {
-    { "<leader>ve", desc = "Ansible vault: encrypt/decrypt under cursor" },
-    { "<leader>vf", desc = "Ansible vault: find secrets in buffer" },
-    { "<leader>vF", desc = "Ansible vault: find secrets in project" },
-    { "<leader>vr", desc = "Ansible vault: reveal/edit secret under cursor" },
-    { "<leader>vR", desc = "Ansible vault: reveal/edit all secrets in buffer" },
+    { "<leader>avv", desc = "Ansible vault: encrypt/decrypt under cursor" },
+    { "<leader>avV", desc = "Ansible vault: encrypt/decrypt buffer" },
+    { "<leader>ave", desc = "Ansible vault: reveal/edit secret under cursor" },
+    { "<leader>avE", desc = "Ansible vault: reveal/edit all secrets in buffer" },
+    { "<leader>avf", desc = "Ansible vault: find secrets in buffer" },
+    { "<leader>avF", desc = "Ansible vault: find secrets in project" },
+    { "<leader>avk", desc = "Ansible vault: rekey secret under cursor" },
+    { "<leader>avK", desc = "Ansible vault: rekey file" },
   },
   opts = {},
 }
@@ -103,6 +106,8 @@ require("neoansible-vault").setup({
                                 -- { prod = { password_file = "~/.vault-prod" } }
   confirm_default = true,       -- ask which vault-id to use for every new
                                 -- encryption (false = silently use the default)
+  confirm_decrypt = true,       -- ask before auto-decrypting a vault file on
+                                -- open (false = decrypt immediately)
   auto_decrypt = true,          -- transparent whole-file decrypt on read
   keymap_filetypes = { "yaml", "yaml.ansible" }, -- buffers that get keymaps
   inline = {
@@ -123,11 +128,25 @@ require("neoansible-vault").setup({
     enabled = true,             -- hide !vault blob lines behind a [vault] marker
   },
   keymaps = {
-    toggle = "<leader>ve",        -- encrypt/decrypt under cursor
-    find_buffer = "<leader>vf",   -- find secrets in buffer
-    find_project = "<leader>vF",  -- find secrets + encrypted files in project
-    reveal_secret = "<leader>vr", -- reveal/edit secret under cursor (float)
-    reveal_buffer = "<leader>vR", -- reveal/edit all secrets in buffer
+    toggle = "<leader>avv",       -- encrypt/decrypt secret under cursor
+    toggle_buffer = "<leader>avV",-- encrypt/decrypt whole buffer by state
+    edit_secret = "<leader>ave",  -- reveal/edit secret under cursor (editor)
+    reveal_buffer = "<leader>avE",-- reveal/edit all secrets in buffer
+    find_buffer = "<leader>avf",  -- find secrets in buffer
+    find_project = "<leader>avF", -- find secrets + encrypted files in the
+                                  -- project (GLOBAL, works from any buffer
+                                  -- inside an ansible project)
+    rekey_secret = "<leader>avk", -- rekey secret under cursor
+    rekey_file = "<leader>avK",   -- rekey file
+    group = {                     -- which-key group labels (nil to disable)
+      ["<leader>a"] = "ansible",
+      ["<leader>av"] = "vault",
+    },
+  },
+  snacks = {
+    explorer = true,              -- encrypt/decrypt toggle in the snacks
+                                  -- explorer (same <leader>avV key)
+    icons = true,                 -- lock icon for encrypted files in pickers
   },
 })
 ```
@@ -204,7 +223,10 @@ use `:AnsibleVaultRekey` instead.
 
 ### Whole files
 
-Just open an encrypted file — it decrypts in place and re-encrypts on `:w`.
+Just open an encrypted file — after a confirmation prompt (`confirm_decrypt`,
+since the plaintext may be sensitive) it decrypts in place and re-encrypts on
+`:w`. Set `confirm_decrypt = false` to skip the prompt and decrypt
+immediately. Choosing "keep encrypted" leaves the ciphertext untouched.
 The buffer shows a `[vault-id: x]` note when applicable.
 
 | Command | Action |
@@ -225,21 +247,21 @@ db_password: !vault |
           6438316338653863633032366232653137...
 ```
 
-- One key for both directions: cursor on a `key: value` line → `<leader>ve`
-  encrypts the value; cursor on a `!vault` block → `<leader>ve` decrypts it
+- One key for both directions: cursor on a `key: value` line → `<leader>avv`
+  encrypts the value; cursor on a `!vault` block → `<leader>avv` decrypts it
   back to plaintext. (Same as `:AnsibleVaultToggle`.)
-- Cursor anywhere on the block → `<leader>vr` or `:AnsibleVaultEdit` →
+- Cursor anywhere on the block → `<leader>ave` or `:AnsibleVaultEdit` →
   single-line values open in `vim.ui.input` (the snacks.input dialog when
   installed, same as the variable-name prompt) pre-filled with the current
   value; multi-line values open in the floating editor. `<CR>`/`:w` saves
   and re-encrypts, `<Esc>`/`q` cancels. (`inline.editor` to force one.)
-- `<leader>vf` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
+- `<leader>avf` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
   buffer (snacks.nvim or telescope if installed, `vim.ui.select` otherwise)
   and opens the chosen one in the edit float.
-- `<leader>vF` or `:AnsibleVaultFiles` searches the whole project: inline
+- `<leader>avF` or `:AnsibleVaultFiles` searches the whole project: inline
   secrets in yaml files (`file:line key`) and whole-file encrypted files.
   Picking an inline secret jumps to it and opens the edit float.
-- `<leader>vR` or `:AnsibleVaultReveal` decrypts **all** blocks in place into
+- `<leader>avE` or `:AnsibleVaultReveal` decrypts **all** blocks in place into
   editable lines (`key: value`, or a `key: |-` literal block for multi-line
   values). `:w` re-encrypts each secret and writes only ciphertext to disk;
   the buffer keeps the plaintext view. Run again to re-encrypt in the
@@ -255,21 +277,69 @@ db_password: !vault |
 
 ## Keymaps
 
-The `<leader>v*` mappings are **buffer-local** — they only
-exist in buffers whose filetype is in `keymap_filetypes` (yaml by default),
-so they cannot clash with your other mappings. `<leader>v` is unused by
-LazyVim (core and extras). `K` is global but falls back to the default `K`
-off a vault block, and buffer-local mappings (e.g. LSP hover) take
-precedence over it.
+All vault operations live under the **`<leader>av` (ansible vault)
+prefix** — chosen to coexist with LazyVim defaults and with
+[mfussenegger/nvim-ansible](https://github.com/mfussenegger/nvim-ansible)
+(which suggests `<leader>t…` for its `run()` and shares our `yaml.ansible`
+filetype detection and `K`/`keywordprg` behavior — overlapping, harmless).
+Lowercase keys act on the **secret under the cursor**, uppercase on the
+**whole buffer**.
+
+The mappings are **buffer-local** — they only exist in buffers whose
+filetype is in `keymap_filetypes` (yaml by default), so they cannot clash
+with your other mappings. The only exception is `<leader>avF`, which is
+**global** and works from any buffer when the current file sits inside an
+ansible project (detected via `ansible.cfg`, `group_vars/`, `host_vars/`,
+`playbooks/`, or `roles/`); elsewhere it just warns. `K` is global but falls
+back to the default `K` off a vault block, and buffer-local mappings (e.g.
+LSP hover) take precedence over it.
+
+### which-key group names
+
+So the popup shows `ansible` / `vault` instead of `+N keymaps`, the plugin
+exposes `require("neoansible-vault").which_key_spec()`. With lazy.nvim the
+installer already adds this to your spec (contributing to which-key's
+`opts.spec`, assembled before which-key loads — immune to load-order races):
+
+```lua
+{
+  "folke/which-key.nvim",
+  optional = true,
+  opts = function(_, opts)
+    opts.spec = opts.spec or {}
+    vim.list_extend(opts.spec, require("neoansible-vault").which_key_spec())
+  end,
+}
+```
+
+Without lazy.nvim, `setup()` also calls `wk.add()` directly (queued before
+which-key loads, or inserted into the live registry if it already loaded).
 
 | Key | Action |
 | --- | --- |
-| `<leader>ve` | Encrypt/decrypt toggle: encrypt the value under the cursor, or decrypt the block under it |
-| `<leader>vf` | Find secrets in the buffer (snacks/telescope/select) |
-| `<leader>vF` | Find secrets in the project (inline blocks + encrypted files) |
-| `<leader>vr` | Reveal/edit the secret under the cursor (float) |
-| `<leader>vR` | Reveal/edit all secrets in the buffer in place (`:w` re-encrypts) |
+| `<leader>avv` | Encrypt/decrypt toggle: encrypt the value under the cursor, or decrypt the block under it |
+| `<leader>avV` | Encrypt/decrypt toggle for the whole buffer, by state |
+| `<leader>ave` | Reveal/edit the secret under the cursor (input dialog or float) |
+| `<leader>avE` | Reveal/edit all secrets in the buffer in place (`:w` re-encrypts) |
+| `<leader>avf` | Find secrets in the buffer (snacks/telescope/select) |
+| `<leader>avF` | Find secrets in the project (works from any buffer in ansible projects) |
+| `<leader>avk` | Rekey the secret under the cursor (new password, optionally new vault-id) |
+| `<leader>avK` | Rekey the file (new password, optionally new vault-id) |
 | `K` | Decrypted hover preview of the block under cursor |
+
+## snacks.nvim integration
+
+When snacks.nvim is installed (all optional, no hard dependency):
+
+- **Explorer actions** — the snacks explorer gains an `ansible vault:
+  encrypt/decrypt file` toggle action (in-place on disk, dispatched by
+  state), bound to `<leader>avV` inside the explorer window. Encryption
+  still asks which vault-id to use.
+- **Lock icons** — vault-encrypted files show a `󰌆` instead of their
+  extension icon in all snacks pickers (detected by content, cached per
+  mtime).
+
+Disable either with `snacks = { explorer = false, icons = false }`.
 
 ## Picker integration
 

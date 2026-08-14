@@ -51,11 +51,19 @@ The plugin works out of the box with defaults. To configure: >lua
       enabled = true,
     },
     keymaps = {
-      toggle = "<leader>ve",
-      find_buffer = "<leader>vf",
-      find_project = "<leader>vF",
-      reveal_secret = "<leader>vr",
-      reveal_buffer = "<leader>vR",
+      toggle = "<leader>avv",
+      toggle_buffer = "<leader>avV",
+      edit_secret = "<leader>ave",
+      reveal_buffer = "<leader>avE",
+      find_buffer = "<leader>avf",
+      find_project = "<leader>avF",
+      rekey_secret = "<leader>avk",
+      rekey_file = "<leader>avK",
+      group = "ansible vault",
+    },
+    snacks = {
+      explorer = true,
+      icons = true,
     },
   })
 <
@@ -78,6 +86,10 @@ Options ~
                         (default true). When false, the default (vault_id or
                         unlabeled) is used silently and the picker only
                         appears when identities are known.
+  confirm_decrypt       Ask for authorization before auto-decrypting a vault
+                        file on open (default true), since the plaintext may
+                        be sensitive. When false, vault files decrypt
+                        immediately. Only applies with auto_decrypt on.
   auto_decrypt          Transparently decrypt vault files on read.
   keymap_filetypes      Filetypes whose buffers get the keymaps (buffer-
                         local). Default: { "yaml", "yaml.ansible" }.
@@ -105,11 +117,27 @@ Options ~
                         'conceallevel' is raised per window while it shows a
                         concealed buffer and restored afterwards).
   keymaps.toggle        Encrypt the plaintext under the cursor / decrypt the
-                        block under the cursor (default <leader>ve).
-  keymaps.find_buffer   |:AnsibleVaultSecrets| (default <leader>vf).
-  keymaps.find_project  |:AnsibleVaultFiles| (default <leader>vF).
-  keymaps.reveal_secret |:AnsibleVaultEdit| (default <leader>vr).
-  keymaps.reveal_buffer |:AnsibleVaultReveal| (default <leader>vR).
+                        block under the cursor (default <leader>avv).
+  keymaps.toggle_buffer Encrypt/decrypt the whole buffer by state
+                        (default <leader>avV).
+  keymaps.edit_secret   |:AnsibleVaultEdit| (default <leader>ave).
+  keymaps.reveal_buffer |:AnsibleVaultReveal| (default <leader>avE).
+  keymaps.find_buffer   |:AnsibleVaultSecrets| (default <leader>avf).
+  keymaps.find_project  |:AnsibleVaultFiles| (default <leader>avF). Global:
+                        works from any buffer inside an ansible project.
+  keymaps.rekey_secret  Rekey the secret under the cursor (default <leader>avk).
+  keymaps.rekey_file    |:AnsibleVaultRekey| (default <leader>avK).
+  keymaps.group         which-key group labels keyed by prefix (default:
+                        { ["<leader>a"] = "ansible", ["<leader>av"] = "vault" }).
+                        With lazy.nvim the installer contributes them to
+                        which-key's opts.spec (see which_key_spec());
+                        otherwise setup() registers them via wk.add (queued
+                        pre-load, or directly inserted post-load).
+  snacks.explorer       Add encrypt/decrypt file actions (bound to
+                        keymaps.encrypt_file/decrypt_file) to the snacks
+                        explorer (default true).
+  snacks.icons          Show a lock icon for vault-encrypted files in snacks
+                        pickers (default true).
 
 ==============================================================================
 3. PASSWORDS                                      *neoansible-vault-passwords*
@@ -261,17 +289,32 @@ The float content gets filetype=yaml for basic syntax coloring.
 ==============================================================================
 7. MAPPINGS                                       *neoansible-vault-mappings*
 
-The keymaps below are buffer-local to |keymap_filetypes| buffers (yaml by
-default), so they never clash with mappings in unrelated buffers.
+All vault operations live under the <leader>av (ansible vault) prefix,
+chosen to coexist with LazyVim defaults and with mfussenegger/nvim-ansible.
+Lowercase keys act on the secret under the cursor, uppercase on the buffer.
 
-<leader>ve              |:AnsibleVaultToggle| (keymaps.toggle)
-<leader>vf              |:AnsibleVaultSecrets| (keymaps.find_buffer)
-<leader>vF              |:AnsibleVaultFiles| (keymaps.find_project)
-<leader>vr              |:AnsibleVaultEdit| (keymaps.reveal_secret)
-<leader>vR              |:AnsibleVaultReveal| (keymaps.reveal_buffer)
+The keymaps below are buffer-local to |keymap_filetypes| buffers (yaml by
+default), so they never clash with mappings in unrelated buffers. The only
+exception is <leader>avF: it is global and works from any buffer when the
+current file is inside an ansible project (detected via ansible.cfg,
+group_vars/, host_vars/, playbooks/, or roles/).
+
+<leader>avv             |:AnsibleVaultToggle| (keymaps.toggle)
+<leader>avV             Encrypt/decrypt buffer by state (keymaps.toggle_buffer)
+<leader>ave             |:AnsibleVaultEdit| (keymaps.edit_secret)
+<leader>avE             |:AnsibleVaultReveal| (keymaps.reveal_buffer)
+<leader>avf             |:AnsibleVaultSecrets| (keymaps.find_buffer)
+<leader>avF             |:AnsibleVaultFiles| (keymaps.find_project; global,
+                        guarded by ansible project detection)
+<leader>avk             Rekey the secret under the cursor (keymaps.rekey_secret)
+<leader>avK             |:AnsibleVaultRekey| (keymaps.rekey_file)
 K                       Decrypted preview of the block under the cursor
                         (inline.hover; global, but buffer-local mappings such
                         as LSP hover take precedence; default K elsewhere)
+
+In the snacks explorer (snacks.explorer):
+<leader>avV             Encrypt/decrypt the file under the cursor (in place,
+                        on disk, dispatched by state)
 
 Inside the edit float:
 <CR>                    Save and re-encrypt

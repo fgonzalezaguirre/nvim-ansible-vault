@@ -63,7 +63,7 @@ not create.
 
 ```lua
 {
-  "you/neoansible-vault",                -- or: dir = "~/dev/fga/neoansible-vault",
+  "fgonzalezaguirre/neoansible-vault", -- or: dir = "~/dev/fga/neoansible-vault",
   -- load before any file read so vault files decrypt transparently on open
   event = "BufReadPre",
   keys = {

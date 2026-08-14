@@ -47,6 +47,10 @@ function tests.edit_decrypts_into_float_and_reencrypts_on_save()
   )
   h.assert_eq(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false), { "original-secret" })
 
+  -- the float is never cramped: wide enough for the footer, a few lines tall
+  h.assert_true(vim.api.nvim_win_get_width(win) >= 44, "float has a sensible minimum width")
+  h.assert_true(vim.api.nvim_win_get_height(win) >= 3, "float has a sensible minimum height")
+
   -- edit the secret and save via :w (BufWriteCmd on the float)
   vim.api.nvim_buf_set_lines(fbuf, 0, -1, false, { "updated-secret" })
   vim.api.nvim_set_current_win(win)

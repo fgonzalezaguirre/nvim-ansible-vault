@@ -78,12 +78,17 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
   for _, l in ipairs(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false)) do
     content_width = math.max(content_width, vim.fn.strdisplaywidth(l))
   end
+  local title = (" vault: %s%s "):format(region.key, vault_id and (" [" .. vault_id .. "]") or "")
+  local footer = " <CR> save & re-encrypt · <Esc> cancel "
+
   local max_w = math.floor(vim.o.columns * cfg.max_width)
   local max_h = math.floor(vim.o.lines * cfg.max_height)
-  local width = math.min(math.max(content_width + 1, 20), max_w)
-  local height = math.min(math.max(#to_lines(plaintext), 1), max_h)
+  -- never narrower than the footer/title, never tinier than 44x3: a 20x1
+  -- float for a short secret reads as cramped and clips the footer
+  local width =
+    math.min(math.max(content_width + 2, vim.fn.strdisplaywidth(footer), vim.fn.strdisplaywidth(title), 44), max_w)
+  local height = math.min(math.max(#to_lines(plaintext), 3), max_h)
 
-  local title = (" vault: %s%s "):format(region.key, vault_id and (" [" .. vault_id .. "]") or "")
   local win = vim.api.nvim_open_win(fbuf, true, {
     relative = "editor",
     row = math.floor((vim.o.lines - height) / 2),
@@ -94,10 +99,12 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
     border = cfg.border,
     title = title,
     title_pos = "center",
-    footer = " <CR> save & re-encrypt · <Esc> cancel ",
+    footer = footer,
     footer_pos = "center",
   })
   vim.wo[win].wrap = false
+  vim.wo[win].scrolloff = 0
+  vim.wo[win].sidescrolloff = 0
 
   local function close()
     if vim.api.nvim_win_is_valid(win) then

@@ -207,7 +207,18 @@ require("neoansible-vault").status({buf})
                           sections = { lualine_x = { { require("neoansible-vault").status } } }
 <
 ==============================================================================
-6. MAPPINGS                                       *neoansible-vault-mappings*
+6. HIGHLIGHTS                                     *neoansible-vault-highlights*
+
+The edit float maps these groups (default links shown; override freely):
+
+  NeoAnsibleVaultTitle    -> Title       float title ("vault: <key>")
+  NeoAnsibleVaultFooter   -> Special     footer key hints
+  NeoAnsibleVaultBorder   -> FloatBorder float border
+
+The float content gets filetype=yaml for basic syntax coloring.
+
+==============================================================================
+7. MAPPINGS                                       *neoansible-vault-mappings*
 
 The keymaps below are buffer-local to |keymap_filetypes| buffers (yaml by
 default), so they never clash with mappings in unrelated buffers.

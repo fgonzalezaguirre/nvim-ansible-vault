@@ -259,6 +259,23 @@ picker = {
 },
 ```
 
+## Highlights
+
+The edit float uses these groups (linked to sensible colorful defaults;
+override them in your colorscheme or config to restyle the dialog):
+
+| Group | Default link | Used for |
+| --- | --- | --- |
+| `NeoAnsibleVaultTitle` | `Title` | float title (`vault: <key>`) |
+| `NeoAnsibleVaultFooter` | `Special` | footer key hints |
+| `NeoAnsibleVaultBorder` | `FloatBorder` | float border |
+
+```lua
+vim.api.nvim_set_hl(0, "NeoAnsibleVaultTitle", { fg = "#f9e2af", bold = true })
+```
+
+The float's content gets `filetype=yaml` for basic syntax coloring.
+
 ## Statusline
 
 `require("neoansible-vault").status()` returns `[vault]` or `[vault:<id>]`

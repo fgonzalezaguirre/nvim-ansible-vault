@@ -58,6 +58,23 @@ function M.indent_block(block, key_indent, blob_indent)
   return out
 end
 
+---Window-local highlight mapping for the edit float.
+local WINHL = table.concat({
+  "Normal:NormalFloat",
+  "FloatBorder:NeoAnsibleVaultBorder",
+  "FloatTitle:NeoAnsibleVaultTitle",
+  "FloatFooter:NeoAnsibleVaultFooter",
+}, ",")
+
+---Define the plugin's default highlight groups. `default = true` keeps them
+---colorscheme/user-overridable; re-applying on every float also restores
+---them after a colorscheme change.
+local function apply_highlights()
+  vim.api.nvim_set_hl(0, "NeoAnsibleVaultTitle", { link = "Title", default = true })
+  vim.api.nvim_set_hl(0, "NeoAnsibleVaultFooter", { link = "Special", default = true })
+  vim.api.nvim_set_hl(0, "NeoAnsibleVaultBorder", { link = "FloatBorder", default = true })
+end
+
 ---Open the decrypted secret in a floating window.
 ---@param src_buf integer
 ---@param region neoansible-vault.InlineRegion
@@ -66,12 +83,14 @@ end
 ---@param vault_id string|nil
 local function open_float(src_buf, region, plaintext, cred, vault_id)
   local cfg = config.get().inline.float
+  apply_highlights()
 
   local fbuf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(fbuf, 0, -1, false, to_lines(plaintext))
   vim.bo[fbuf].buftype = "acwrite"
   vim.bo[fbuf].bufhidden = "wipe"
   vim.bo[fbuf].swapfile = false
+  vim.bo[fbuf].filetype = "yaml" -- a little syntax color for the value
   vim.api.nvim_buf_set_name(fbuf, ("ansible-vault://%s"):format(region.key))
 
   local content_width = 1
@@ -89,7 +108,7 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
     math.min(math.max(content_width + 2, vim.fn.strdisplaywidth(footer), vim.fn.strdisplaywidth(title), 44), max_w)
   local height = math.min(math.max(#to_lines(plaintext), 3), max_h)
 
-  local wo = { wrap = false, scrolloff = 0, sidescrolloff = 0 }
+  local wo = { wrap = false, scrolloff = 0, sidescrolloff = 0, winhighlight = WINHL }
 
   local win, close
   local ok, snacks = pcall(require, "snacks")

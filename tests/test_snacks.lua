@@ -43,6 +43,7 @@ function tests.edit_float_uses_snacks_win()
   )
   h.assert_eq(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false), { "snacks-secret" })
   h.assert_true(vim.api.nvim_win_get_config(win).relative ~= "", "float is floating")
+  h.assert_true(vim.wo[win].winhighlight:match("NeoAnsibleVaultTitle") ~= nil, "plugin highlight groups applied")
 
   -- no extra windows (e.g. a backdrop pane) may be created
   local floats = 0

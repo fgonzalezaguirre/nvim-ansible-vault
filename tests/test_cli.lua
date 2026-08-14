@@ -15,9 +15,12 @@ local function await(fn, ...)
     done = true
   end
   fn(unpack(call, 1, n + 1))
-  h.assert_true(h.wait_for(function()
-    return done
-  end), "async cli call timed out")
+  h.assert_true(
+    h.wait_for(function()
+      return done
+    end),
+    "async cli call timed out"
+  )
   return result.err, result.out
 end
 

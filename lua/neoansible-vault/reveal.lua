@@ -253,7 +253,10 @@ function M.write(buf)
     if vim.api.nvim_buf_is_valid(buf) then
       vim.bo[buf].modified = false
     end
-    notify(("wrote %s (%d secret(s) re-encrypted)"):format(vim.fn.fnamemodify(target, ":t"), #state.entries), vim.log.levels.INFO)
+    notify(
+      ("wrote %s (%d secret(s) re-encrypted)"):format(vim.fn.fnamemodify(target, ":t"), #state.entries),
+      vim.log.levels.INFO
+    )
   end)
 end
 
@@ -286,10 +289,13 @@ local function reveal(buf)
         if err then
           notify_err(("failed to decrypt %s: %s (left encrypted)"):format(region.key, err))
         else
-          table.insert(
-            entries,
-            { key = region.key, key_indent = region.key_indent, vault_id = vault_id, value = plaintext, region = region }
-          )
+          table.insert(entries, {
+            key = region.key,
+            key_indent = region.key_indent,
+            vault_id = vault_id,
+            value = plaintext,
+            region = region,
+          })
         end
         step()
       end)
@@ -307,7 +313,13 @@ local function reveal(buf)
       return a.region.start_row > b.region.start_row
     end)
     for _, e in ipairs(entries) do
-      vim.api.nvim_buf_set_lines(buf, e.region.start_row, e.region.end_row, false, plaintext_lines(e.key, e.key_indent, e.value))
+      vim.api.nvim_buf_set_lines(
+        buf,
+        e.region.start_row,
+        e.region.end_row,
+        false,
+        plaintext_lines(e.key, e.key_indent, e.value)
+      )
     end
 
     -- document-order, slim state for the write path

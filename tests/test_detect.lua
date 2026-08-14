@@ -93,8 +93,9 @@ end
 local function ts_buf(lines)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  local ok = pcall(vim.treesitter.get_parser, buf, "yaml")
-  if not ok then
+  -- get_parser returns nil + error (no throw) when the parser is missing
+  local ok, parser = pcall(vim.treesitter.get_parser, buf, "yaml")
+  if not ok or not parser then
     vim.api.nvim_buf_delete(buf, { force = true })
     return nil
   end

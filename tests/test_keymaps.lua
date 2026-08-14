@@ -69,9 +69,12 @@ function tests.encrypt_keymap_encrypts_line_under_cursor()
     cb(opts.default) -- accept the parsed key name
   end
   vim.api.nvim_feedkeys(vim.keycode("<leader>vs"), "mx", false)
-  h.assert_true(h.wait_for(function()
-    return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("api_token: !vault") ~= nil
-  end), "line under cursor was not encrypted")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("api_token: !vault") ~= nil
+    end),
+    "line under cursor was not encrypted"
+  )
   vim.ui.input = orig_input
 
   -- the other line is untouched

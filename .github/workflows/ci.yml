@@ -36,6 +36,15 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Install tree-sitter YAML parser
+        run: |
+          mkdir -p "$HOME/.local/share/nvim/site/pack/ts/start"
+          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter "$HOME/.local/share/nvim/site/pack/ts/start/nvim-treesitter"
+          nvim --headless "+TSInstallSync yaml" +qa!
+
+      - name: Run tests with the YAML tree-sitter parser
+        run: make test
+
   style:
     runs-on: ubuntu-latest
     steps:

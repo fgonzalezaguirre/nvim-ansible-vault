@@ -58,9 +58,12 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
   local buf, dir, passfile = edit_secrets_file()
 
   require("neoansible-vault").toggle_reveal()
-  h.assert_true(h.wait_for(function()
-    return vim.b[buf].neoansible_vault_reveal ~= nil
-  end), "reveal did not engage")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.b[buf].neoansible_vault_reveal ~= nil
+    end),
+    "reveal did not engage"
+  )
 
   local lines = buf_lines(buf)
   h.assert_true(not has_ciphertext(lines), "no ciphertext left in buffer")
@@ -71,15 +74,16 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
   h.assert_eq(vim.bo[buf].buftype, "acwrite")
 
   -- edit one secret and write: disk gets ciphertext, buffer keeps plaintext
-  local row = vim.tbl_contains(lines, "db_password: s3cr3t")
-      and vim.fn.index(lines, "db_password: s3cr3t") + 1
-    or nil
+  local row = vim.tbl_contains(lines, "db_password: s3cr3t") and vim.fn.index(lines, "db_password: s3cr3t") + 1 or nil
   h.assert_true(row ~= nil)
   vim.api.nvim_buf_set_lines(buf, row - 1, row, false, { "db_password: n3w-s3cr3t" })
   vim.cmd.write()
-  h.assert_true(h.wait_for(function()
-    return vim.bo[buf].modified == false
-  end), "write did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.bo[buf].modified == false
+    end),
+    "write did not complete"
+  )
 
   local fd = assert(io.open(vim.api.nvim_buf_get_name(buf), "r"))
   local disk = vim.split(fd:read("*a"), "\n", { plain = true })
@@ -95,9 +99,12 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
 
   -- toggle off: blocks re-encrypted in the buffer
   require("neoansible-vault").toggle_reveal()
-  h.assert_true(h.wait_for(function()
-    return has_ciphertext(buf_lines(buf))
-  end), "unreveal did not re-encrypt the buffer")
+  h.assert_true(
+    h.wait_for(function()
+      return has_ciphertext(buf_lines(buf))
+    end),
+    "unreveal did not re-encrypt the buffer"
+  )
   h.assert_eq(vim.b[buf].neoansible_vault_reveal, nil)
   h.assert_eq(vim.bo[buf].buftype, "")
   h.assert_eq(decrypt_block(buf_lines(buf), "db_password", passfile, dir, "buffer"), "n3w-s3cr3t")
@@ -116,17 +123,23 @@ function tests.reveal_multiline_roundtrip()
   local buf = vim.api.nvim_get_current_buf()
 
   require("neoansible-vault").toggle_reveal()
-  h.assert_true(h.wait_for(function()
-    return vim.b[buf].neoansible_vault_reveal ~= nil
-  end), "reveal did not engage")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.b[buf].neoansible_vault_reveal ~= nil
+    end),
+    "reveal did not engage"
+  )
 
   h.assert_eq(buf_lines(buf), { "cert: |-", "  line one", "  line two" }, "multi-line value as literal block")
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "cert: |-", "  line one", "  line 2 changed", "  line three" })
   vim.cmd.write()
-  h.assert_true(h.wait_for(function()
-    return vim.bo[buf].modified == false
-  end), "write did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.bo[buf].modified == false
+    end),
+    "write did not complete"
+  )
 
   local fd = assert(io.open(path, "r"))
   local disk = vim.split(fd:read("*a"), "\n", { plain = true })

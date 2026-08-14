@@ -20,9 +20,12 @@ end
 local function edit_and_wait(path)
   vim.cmd.edit(vim.fn.fnameescape(path))
   local buf = vim.api.nvim_get_current_buf()
-  h.assert_true(h.wait_for(function()
-    return current_state(buf) ~= nil
-  end), "buffer was not flagged as decrypted")
+  h.assert_true(
+    h.wait_for(function()
+      return current_state(buf) ~= nil
+    end),
+    "buffer was not flagged as decrypted"
+  )
   return buf
 end
 
@@ -61,9 +64,12 @@ function tests.write_reencrypts_roundtrip()
   local buf = edit_and_wait(path)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "key: new", "added: true" })
   vim.cmd.write()
-  h.assert_true(h.wait_for(function()
-    return vim.bo[buf].modified == false
-  end), "write did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.bo[buf].modified == false
+    end),
+    "write did not complete"
+  )
 
   -- verify externally: the file on disk must be valid vault ciphertext
   local fd = assert(io.open(path, "r"))
@@ -90,9 +96,12 @@ function tests.vault_id_file_roundtrip()
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "k: changed" })
   vim.cmd.write()
-  h.assert_true(h.wait_for(function()
-    return vim.bo[buf].modified == false
-  end), "write did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.bo[buf].modified == false
+    end),
+    "write did not complete"
+  )
 
   local fd = assert(io.open(path, "r"))
   h.assert_eq(fd:read("*l"), "$ANSIBLE_VAULT;1.2;AES256;prod", "vault-id preserved on write")
@@ -131,11 +140,14 @@ function tests.rekey_changes_password_and_preserves_vault_id()
     end
   end
   require("neoansible-vault").rekey_buffer()
-  h.assert_true(h.wait_for(function()
-    -- the header keeps the 1.2 label, so poll the password change itself
-    local code = h.sys({ "ansible-vault", "view", "--vault-password-file", newfile, path })
-    return code == 0
-  end), "rekey did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      -- the header keeps the 1.2 label, so poll the password change itself
+      local code = h.sys({ "ansible-vault", "view", "--vault-password-file", newfile, path })
+      return code == 0
+    end),
+    "rekey did not complete"
+  )
   vim.ui.input = orig_input
   h.assert_eq(#prompts, 2)
 
@@ -155,9 +167,12 @@ function tests.rekey_changes_password_and_preserves_vault_id()
   h.assert_true(current_state(buf) ~= nil)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "k: after-rekey" })
   vim.cmd.write()
-  h.assert_true(h.wait_for(function()
-    return vim.bo[buf].modified == false
-  end), "write after rekey did not complete")
+  h.assert_true(
+    h.wait_for(function()
+      return vim.bo[buf].modified == false
+    end),
+    "write after rekey did not complete"
+  )
   h.assert_eq(h.vault_view(path, newfile), "k: after-rekey\n")
 
   vim.cmd.bwipeout({ bang = true })
@@ -268,15 +283,21 @@ function tests.explicit_decrypt_and_encrypt_buffer()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, ciphertext)
 
   require("neoansible-vault").decrypt_buffer()
-  h.assert_true(h.wait_for(function()
-    return current_state(buf) ~= nil
-  end), "explicit decrypt did not flag buffer")
+  h.assert_true(
+    h.wait_for(function()
+      return current_state(buf) ~= nil
+    end),
+    "explicit decrypt did not flag buffer"
+  )
   h.assert_eq(vim.api.nvim_buf_get_lines(buf, 0, -1, false), { "m: 1" })
 
   require("neoansible-vault").encrypt_buffer()
-  h.assert_true(h.wait_for(function()
-    return current_state(buf) == nil and vim.bo[buf].buftype == ""
-  end), "explicit encrypt did not reset buffer state")
+  h.assert_true(
+    h.wait_for(function()
+      return current_state(buf) == nil and vim.bo[buf].buftype == ""
+    end),
+    "explicit encrypt did not reset buffer state"
+  )
   h.assert_true(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("^%$ANSIBLE_VAULT;") ~= nil)
 
   vim.cmd.bwipeout({ bang = true })

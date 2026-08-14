@@ -95,7 +95,9 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
   local ok, snacks = pcall(require, "snacks")
   local sw = nil
   if ok and snacks.win then
-    -- LazyVim-native look: backdrop dimming, consistent border/footer.
+    -- LazyVim-native look: consistent border/title/footer. backdrop=false:
+    -- snacks' built-in "float" style enables a backdrop window by default,
+    -- which renders as an opaque blank pane in some setups.
     ok, sw = pcall(snacks.win, {
       buf = fbuf,
       enter = true,
@@ -104,7 +106,7 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
       border = cfg.border,
       title = title,
       footer = footer,
-      backdrop = 60,
+      backdrop = false,
       wo = wo,
       keys = {
         q = "close",

@@ -44,6 +44,15 @@ function tests.edit_float_uses_snacks_win()
   h.assert_eq(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false), { "snacks-secret" })
   h.assert_true(vim.api.nvim_win_get_config(win).relative ~= "", "float is floating")
 
+  -- no extra windows (e.g. a backdrop pane) may be created
+  local floats = 0
+  for _, w in ipairs(vim.api.nvim_list_wins()) do
+    if vim.api.nvim_win_get_config(w).relative ~= "" then
+      floats = floats + 1
+    end
+  end
+  h.assert_eq(floats, 1, "exactly one floating window (no backdrop pane)")
+
   pcall(vim.api.nvim_win_close, win, true)
   vim.cmd.bwipeout({ bang = true })
 end

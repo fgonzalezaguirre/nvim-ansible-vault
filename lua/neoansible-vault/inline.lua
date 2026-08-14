@@ -41,11 +41,12 @@ local function buffer_dir(buf)
 end
 
 ---Re-indent `encrypt_string` output to match the original region.
+---Also used by reveal.lua.
 ---@param block string raw encrypt_string stdout
 ---@param key_indent integer
 ---@param blob_indent integer
 ---@return string[]
-local function indent_block(block, key_indent, blob_indent)
+function M.indent_block(block, key_indent, blob_indent)
   local out = {}
   for i, line in ipairs(to_lines(block)) do
     if i == 1 then
@@ -115,7 +116,7 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
         notify_err("source buffer is gone; discarding changes")
         return
       end
-      local new_lines = indent_block(block, region.key_indent, region.blob_indent)
+      local new_lines = M.indent_block(block, region.key_indent, region.blob_indent)
       vim.api.nvim_buf_set_lines(src_buf, region.start_row, region.end_row, false, new_lines)
       vim.bo[fbuf].modified = false
       close()
@@ -256,7 +257,7 @@ function M.encrypt_selection(line1, line2, vault_id)
         if not vim.api.nvim_buf_is_valid(buf) then
           return
         end
-        local new_lines = indent_block(block, indent, indent + 2)
+        local new_lines = M.indent_block(block, indent, indent + 2)
         vim.api.nvim_buf_set_lines(buf, line1 - 1, line2, false, new_lines)
         notify(("encrypted %s"):format(key), vim.log.levels.INFO)
       end)

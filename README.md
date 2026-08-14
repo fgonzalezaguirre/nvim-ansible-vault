@@ -20,6 +20,9 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 - **Hover preview** — `K` on a `!vault` block shows the decrypted value in a
   read-only float without entering edit mode (falls back to default `K`
   elsewhere; LSP buffer-local `K` mappings take precedence).
+- **Reveal mode** — `:AnsibleVaultReveal` decrypts every `!vault` block in
+  the buffer into editable plaintext lines; `:w` re-encrypts each secret and
+  writes only ciphertext to disk. Toggle again to re-encrypt in the buffer.
 - **`yaml.ansible` filetype** — common Ansible layouts (`playbooks/`,
   `roles/*/{tasks,handlers,vars,defaults}`, `group_vars`, `host_vars`) are
   detected as `yaml.ansible` for your own autocmds and lazy.nvim `ft` triggers.
@@ -95,6 +98,8 @@ require("neoansible-vault").setup({
   inline = {
     enabled = true,
     keymap = "<leader>ve",      -- edit !vault block under cursor
+    encrypt_keymap = "<leader>vs", -- encrypt the value/line under cursor
+    reveal_keymap = "<leader>vr",  -- toggle in-place editing of all secrets
     treesitter = true,          -- use YAML tree-sitter parser to avoid false
                                 -- positives when available (optional)
     hover = true,               -- K shows a decrypted preview on vault blocks
@@ -159,6 +164,13 @@ db_password: !vault |
 - `<leader>vl` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
   buffer (snacks.nvim or telescope if installed, `vim.ui.select` otherwise)
   and opens the chosen one in the edit float.
+- `<leader>vr` or `:AnsibleVaultReveal` decrypts **all** blocks in place into
+  editable lines (`key: value`, or a `key: |-` literal block for multi-line
+  values). `:w` re-encrypts each secret and writes only ciphertext to disk;
+  the buffer keeps the plaintext view. Run again to re-encrypt in the
+  buffer. Multi-line and vault-id'd secrets are supported.
+- Cursor on a `key: value` line → `<leader>vs` encrypts just the value
+  (equivalent to `:AnsibleVaultEncryptString` on the current line).
 - Visually select text (or put the cursor on a `key: value` line) →
   `:'<,'>AnsibleVaultEncryptString` → prompts for a variable name and
   replaces the selection with a `!vault` block. For a single `key: value`
@@ -170,12 +182,20 @@ db_password: !vault |
 
 ## Keymaps
 
-The `<leader>ve` / `<leader>vl` mappings are **buffer-local** — they only
+The `<leader>v*` mappings are **buffer-local** — they only
 exist in buffers whose filetype is in `keymap_filetypes` (yaml by default),
 so they cannot clash with your other mappings. `<leader>v` is unused by
 LazyVim (core and extras). `K` is global but falls back to the default `K`
 off a vault block, and buffer-local mappings (e.g. LSP hover) take
 precedence over it.
+
+| Key | Action |
+| --- | --- |
+| `<leader>ve` | Edit the `!vault` block under the cursor (float) |
+| `<leader>vl` | Pick a secret in the buffer (snacks/telescope/select) |
+| `<leader>vs` | Encrypt the value/line under the cursor |
+| `<leader>vr` | Reveal/edit all secrets in place (`:w` re-encrypts) |
+| `K` | Decrypted hover preview of the block under cursor |
 
 ## Statusline
 
@@ -189,9 +209,10 @@ sections = { lualine_x = { { require("neoansible-vault").status } } }
 
 ## Security notes
 
-- Decrypted whole-file buffers use `noswapfile`; the float scratch buffers
-  are wiped on close. Plaintext still exists in memory (and undo history)
-  while a buffer is open — that is inherent to transparent editing.
+- Decrypted whole-file buffers and revealed inline secrets use `noswapfile`;
+  float scratch buffers are wiped on close. Plaintext still exists in memory
+  (and undo history) while a buffer is open or revealed — that is inherent to
+  transparent editing.
 - `'backup'`/`'writebackup'` are global-only options; set them yourself if
   you want to keep plaintext out of backups.
 - The plugin never logs or persists passwords; prompted passwords live only

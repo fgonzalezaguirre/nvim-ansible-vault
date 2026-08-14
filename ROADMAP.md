@@ -36,3 +36,6 @@
 - [x] buffer-local keymaps
       (`<leader>ve`/`<leader>vl` only exist in yaml buffers; `K` falls back
       to default K; `<leader>v` is unused by LazyVim)
+- [x] encrypt value/line under cursor (`<leader>vs`)
+- [x] reveal mode: in-place decrypt-all with re-encrypt on write
+      (`:AnsibleVaultReveal`, `<leader>vr`)

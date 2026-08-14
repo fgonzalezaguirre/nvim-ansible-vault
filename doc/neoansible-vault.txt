@@ -34,17 +34,25 @@ The plugin works out of the box with defaults. To configure: >lua
     dotenv_name = ".env",
     prompt = true,
     cache_ttl = 900,
+    vault_id = nil,
     auto_decrypt = true,
+    keymap_filetypes = { "yaml", "yaml.ansible" },
     inline = {
       enabled = true,
       keymap = "<leader>ve",
+      encrypt_keymap = "<leader>vs",
+      reveal_keymap = "<leader>vr",
       treesitter = true,
+      hover = true,
       float = { max_width = 0.6, max_height = 0.6, border = "rounded" },
     },
     picker = {
       enabled = true,
       keymap = "<leader>vl",
       backend = "auto",
+    },
+    conceal = {
+      enabled = true,
     },
   })
 <
@@ -65,6 +73,10 @@ Options ~
                         { "yaml", "yaml.ansible" }.
   inline.enabled        Enable inline `!vault` editing.
   inline.keymap         Normal-mode mapping for |:AnsibleVaultEdit|.
+  inline.encrypt_keymap Normal-mode mapping to encrypt the value/line under
+                        the cursor (default <leader>vs).
+  inline.reveal_keymap  Normal-mode mapping for |:AnsibleVaultReveal|
+                        (default <leader>vr).
   inline.treesitter     Use tree-sitter (YAML parser) to reject false-positive
                         `!vault` matches (e.g. inside block scalars or
                         comments) when a parser is available. Falls back to
@@ -116,6 +128,18 @@ to ansible-vault via a 0600 temp file deleted after each call.
                         snacks.nvim or telescope.nvim when installed, falling
                         back to |vim.ui.select()|.
 
+                                                      *:AnsibleVaultReveal*
+:AnsibleVaultReveal     Toggle reveal mode: decrypt every `!vault` block in
+                        the buffer into editable plaintext lines (a
+                        `key: value` line, or a `key: |-` literal block for
+                        multi-line values). While revealed the buffer is
+                        acwrite: `:w` re-encrypts each secret and writes only
+                        ciphertext to disk, the buffer keeps the plaintext
+                        view. Toggle again to re-encrypt the blocks in the
+                        buffer. Blocks that fail to decrypt stay encrypted;
+                        writes abort with an error rather than risking
+                        corruption.
+
                                                 *:AnsibleVaultEncryptString*
 :[range]AnsibleVaultEncryptString [vault-id]
                         Encrypt [range] lines into a `key: !vault |` block.
@@ -163,6 +187,9 @@ default), so they never clash with mappings in unrelated buffers.
 
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
 <leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
+<leader>vs              Encrypt the value/line under cursor
+                        (inline.encrypt_keymap)
+<leader>vr              |:AnsibleVaultReveal| (inline.reveal_keymap)
 K                       Decrypted preview of the block under the cursor
                         (inline.hover; global, but buffer-local mappings such
                         as LSP hover take precedence; default K elsewhere)

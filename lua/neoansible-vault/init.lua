@@ -8,6 +8,7 @@ function M.setup(opts)
   require("neoansible-vault.inline").setup()
   require("neoansible-vault.picker").setup()
   require("neoansible-vault.conceal").setup()
+  require("neoansible-vault.reveal").setup()
   return cfg
 end
 
@@ -19,6 +20,11 @@ end
 ---Pick an inline `!vault` secret in the current buffer and edit it.
 function M.pick_secret()
   require("neoansible-vault.picker").pick()
+end
+
+---Toggle reveal mode: decrypt all inline secrets in place, re-encrypt on write.
+function M.toggle_reveal()
+  require("neoansible-vault.reveal").toggle()
 end
 
 ---Encrypt a range of lines into a `key: !vault |` block.

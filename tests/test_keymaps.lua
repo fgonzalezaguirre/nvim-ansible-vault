@@ -23,6 +23,7 @@ function tests.keymaps_are_buffer_local_to_yaml()
   h.assert_true(has_map(ybuf, "<leader>ve"), "edit keymap in yaml buffer")
   h.assert_true(has_map(ybuf, "<leader>vl"), "picker keymap in yaml buffer")
   h.assert_true(has_map(ybuf, "<leader>vs"), "encrypt keymap in yaml buffer")
+  h.assert_true(has_map(ybuf, "<leader>vr"), "reveal keymap in yaml buffer")
 
   local py = dir .. "/script.py"
   h.write_file(py, "print(1)\n")
@@ -31,6 +32,7 @@ function tests.keymaps_are_buffer_local_to_yaml()
   h.assert_true(not has_map(pbuf, "<leader>ve"), "no edit keymap in python buffer")
   h.assert_true(not has_map(pbuf, "<leader>vl"), "no picker keymap in python buffer")
   h.assert_true(not has_map(pbuf, "<leader>vs"), "no encrypt keymap in python buffer")
+  h.assert_true(not has_map(pbuf, "<leader>vr"), "no reveal keymap in python buffer")
 
   vim.cmd.bwipeout({ bang = true })
   vim.cmd.bwipeout({ bang = true })

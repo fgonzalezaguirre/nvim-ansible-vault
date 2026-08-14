@@ -16,6 +16,10 @@ vim.api.nvim_create_user_command("AnsibleVaultSecrets", function()
   require("neoansible-vault").pick_secret()
 end, { desc = "Pick a !vault secret in the current buffer" })
 
+vim.api.nvim_create_user_command("AnsibleVaultReveal", function()
+  require("neoansible-vault").toggle_reveal()
+end, { desc = "Toggle in-place editing of all !vault secrets (re-encrypts on write)" })
+
 vim.api.nvim_create_user_command("AnsibleVaultEncryptString", function(cmd)
   require("neoansible-vault").encrypt_selection(cmd.line1, cmd.line2, cmd.args ~= "" and cmd.args or nil)
 end, { range = true, nargs = "?", desc = "Encrypt lines/selection into a !vault block ([vault-id] optional)" })

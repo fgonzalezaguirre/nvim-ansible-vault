@@ -173,8 +173,11 @@ return {
   -- load before any file read so vault files decrypt transparently on open
   event = "BufReadPre",
   keys = {
-    { "<leader>ve", desc = "Edit ansible vault secret" },
-    { "<leader>vl", desc = "Pick ansible vault secret" },
+    { "<leader>ve", desc = "Ansible vault: encrypt/decrypt under cursor" },
+    { "<leader>vf", desc = "Ansible vault: find secrets in buffer" },
+    { "<leader>vF", desc = "Ansible vault: find secrets in project" },
+    { "<leader>vr", desc = "Ansible vault: reveal/edit secret under cursor" },
+    { "<leader>vR", desc = "Ansible vault: reveal/edit all secrets in buffer" },
   },
   opts = {},
 }

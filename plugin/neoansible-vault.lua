@@ -32,6 +32,10 @@ vim.api.nvim_create_user_command("AnsibleVaultDecryptString", function()
   require("neoansible-vault").decrypt_inline()
 end, { desc = "Decrypt the !vault block under the cursor back to plaintext" })
 
+vim.api.nvim_create_user_command("AnsibleVaultToggle", function()
+  require("neoansible-vault").toggle_inline()
+end, { desc = "Decrypt the !vault block under the cursor, or encrypt the plaintext under it" })
+
 vim.api.nvim_create_user_command("AnsibleVaultDecrypt", function()
   require("neoansible-vault").decrypt_buffer()
 end, { desc = "Decrypt the current buffer (re-encrypts on write)" })

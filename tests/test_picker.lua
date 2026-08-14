@@ -121,6 +121,45 @@ function tests.collect_files_finds_vault_files()
   h.assert_true(found[1].text:match("%[prod%]") ~= nil)
 end
 
+function tests.collect_project_finds_inline_and_file_secrets()
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+
+  -- a whole-file encrypted file
+  local enc = dir .. "/group_vars/vault.yml"
+  vim.fn.mkdir(vim.fs.dirname(enc), "p")
+  h.write_file(enc, "k: v\n")
+  h.vault_encrypt(enc, passfile, "prod")
+
+  -- a yaml file with an inline secret
+  local block = h.vault_encrypt_string("s3cr3t", "db_password", passfile)
+  local vars = dir .. "/roles/web/vars/main.yml"
+  vim.fn.mkdir(vim.fs.dirname(vars), "p")
+  h.write_file(vars, "plain: value\n" .. block)
+
+  -- noise: plain yaml, non-yaml vault-looking file without header
+  vim.fn.mkdir(dir .. "/roles/web/tasks", "p")
+  h.write_file(dir .. "/roles/web/tasks/main.yml", "- name: x\n")
+
+  local found = picker.collect_project(dir)
+  h.assert_eq(#found, 2, "one encrypted file + one inline secret")
+
+  local file_entry = vim.tbl_filter(function(e)
+    return e.kind == "file"
+  end, found)[1]
+  h.assert_eq(file_entry.rel, "group_vars/vault.yml")
+  h.assert_eq(file_entry.vault_id, "prod")
+  h.assert_true(file_entry.text:match("encrypted file") ~= nil)
+
+  local inline_entry = vim.tbl_filter(function(e)
+    return e.kind == "inline"
+  end, found)[1]
+  h.assert_eq(inline_entry.rel, "roles/web/vars/main.yml")
+  h.assert_eq(inline_entry.key, "db_password")
+  h.assert_eq(inline_entry.lnum, 2, "1-indexed line of the key line")
+  h.assert_true(inline_entry.text:match("main%.yml:2") ~= nil)
+end
+
 function tests.collect_files_empty_tree()
   local dir = h.tmpdir()
   h.write_file(dir .. "/plain.yml", "k: v\n")

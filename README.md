@@ -70,8 +70,11 @@ not create.
   -- load before any file read so vault files decrypt transparently on open
   event = "BufReadPre",
   keys = {
-    { "<leader>ve", desc = "Edit ansible vault secret" },
-    { "<leader>vl", desc = "Pick ansible vault secret" },
+    { "<leader>ve", desc = "Ansible vault: encrypt/decrypt under cursor" },
+    { "<leader>vf", desc = "Ansible vault: find secrets in buffer" },
+    { "<leader>vF", desc = "Ansible vault: find secrets in project" },
+    { "<leader>vr", desc = "Ansible vault: reveal/edit secret under cursor" },
+    { "<leader>vR", desc = "Ansible vault: reveal/edit all secrets in buffer" },
   },
   opts = {},
 }
@@ -100,10 +103,6 @@ require("neoansible-vault").setup({
   keymap_filetypes = { "yaml", "yaml.ansible" }, -- buffers that get keymaps
   inline = {
     enabled = true,
-    keymap = "<leader>ve",      -- edit !vault block under cursor
-    encrypt_keymap = "<leader>vs", -- encrypt the value/line under cursor
-    decrypt_keymap = "<leader>vd", -- decrypt !vault block under cursor to plaintext
-    reveal_keymap = "<leader>vr",  -- toggle in-place editing of all secrets
     treesitter = true,          -- use YAML tree-sitter parser to avoid false
                                 -- positives when available (optional)
     hover = true,               -- K shows a decrypted preview on vault blocks
@@ -111,12 +110,17 @@ require("neoansible-vault").setup({
   },
   picker = {
     enabled = true,
-    keymap = "<leader>vl",      -- pick a !vault secret in the buffer
-    files_keymap = "<leader>vf", -- pick a vault-encrypted file in the project
     backend = "auto",           -- "auto" | "snacks" | "telescope" | "select"
   },
   conceal = {
     enabled = true,             -- hide !vault blob lines behind a [vault] marker
+  },
+  keymaps = {
+    toggle = "<leader>ve",        -- encrypt/decrypt under cursor
+    find_buffer = "<leader>vf",   -- find secrets in buffer
+    find_project = "<leader>vF",  -- find secrets + encrypted files in project
+    reveal_secret = "<leader>vr", -- reveal/edit secret under cursor (float)
+    reveal_buffer = "<leader>vR", -- reveal/edit all secrets in buffer
   },
 })
 ```
@@ -153,8 +157,9 @@ The buffer shows a `[vault-id: x]` note when applicable.
 | `:AnsibleVaultDecrypt` | Decrypt the current buffer (re-encrypts on write) |
 | `:AnsibleVaultEncrypt [vault-id]` | Encrypt the current buffer, replacing it with ciphertext |
 | `:AnsibleVaultRekey` | Re-encrypt the file with a new password (and optionally a new vault-id) |
+| `:AnsibleVaultToggle` | Decrypt the block under the cursor, or encrypt the plaintext under it |
 | `:AnsibleVaultDecryptString` | Decrypt the `!vault` block under the cursor back to plaintext |
-| `:AnsibleVaultFiles` | Pick a vault-encrypted file in the project and open it |
+| `:AnsibleVaultFiles` | Find vault secrets (inline blocks + encrypted files) in the project |
 | `:AnsibleVaultClearCache` | Forget cached (prompted) passwords |
 
 ### Inline `!vault` blocks
@@ -165,23 +170,23 @@ db_password: !vault |
           6438316338653863633032366232653137...
 ```
 
-- Cursor anywhere on the block → `<leader>ve` or `:AnsibleVaultEdit` →
+- One key for both directions: cursor on a `key: value` line → `<leader>ve`
+  encrypts the value; cursor on a `!vault` block → `<leader>ve` decrypts it
+  back to plaintext. (Same as `:AnsibleVaultToggle`.)
+- Cursor anywhere on the block → `<leader>vr` or `:AnsibleVaultEdit` →
   floating window with the plaintext. `<CR>`/`:w` saves and re-encrypts,
   `<Esc>`/`q` cancels.
-- `<leader>vl` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
+- `<leader>vf` or `:AnsibleVaultSecrets` lists every `!vault` secret in the
   buffer (snacks.nvim or telescope if installed, `vim.ui.select` otherwise)
   and opens the chosen one in the edit float.
-- `<leader>vr` or `:AnsibleVaultReveal` decrypts **all** blocks in place into
+- `<leader>vF` or `:AnsibleVaultFiles` searches the whole project: inline
+  secrets in yaml files (`file:line key`) and whole-file encrypted files.
+  Picking an inline secret jumps to it and opens the edit float.
+- `<leader>vR` or `:AnsibleVaultReveal` decrypts **all** blocks in place into
   editable lines (`key: value`, or a `key: |-` literal block for multi-line
   values). `:w` re-encrypts each secret and writes only ciphertext to disk;
   the buffer keeps the plaintext view. Run again to re-encrypt in the
   buffer. Multi-line and vault-id'd secrets are supported.
-- Cursor on a `key: value` line → `<leader>vs` encrypts just the value
-  (equivalent to `:AnsibleVaultEncryptString` on the current line).
-- The inverse: cursor on a `!vault` block → `<leader>vd` or
-  `:AnsibleVaultDecryptString` replaces the block with plaintext
-  (`key: value`, or `key: |-` for multi-line). Nothing is re-encrypted — the
-  value stays plaintext until you encrypt it again.
 - Visually select text (or put the cursor on a `key: value` line) →
   `:'<,'>AnsibleVaultEncryptString` → prompts for a variable name and
   replaces the selection with a `!vault` block. For a single `key: value`
@@ -202,13 +207,30 @@ precedence over it.
 
 | Key | Action |
 | --- | --- |
-| `<leader>ve` | Edit the `!vault` block under the cursor (float) |
-| `<leader>vl` | Pick a secret in the buffer (snacks/telescope/select) |
-| `<leader>vf` | Pick a vault-encrypted file in the project |
-| `<leader>vs` | Encrypt the value/line under the cursor |
-| `<leader>vd` | Decrypt the block under the cursor back to plaintext |
-| `<leader>vr` | Reveal/edit all secrets in place (`:w` re-encrypts) |
+| `<leader>ve` | Encrypt/decrypt toggle: encrypt the value under the cursor, or decrypt the block under it |
+| `<leader>vf` | Find secrets in the buffer (snacks/telescope/select) |
+| `<leader>vF` | Find secrets in the project (inline blocks + encrypted files) |
+| `<leader>vr` | Reveal/edit the secret under the cursor (float) |
+| `<leader>vR` | Reveal/edit all secrets in the buffer in place (`:w` re-encrypts) |
 | `K` | Decrypted hover preview of the block under cursor |
+
+## Picker integration
+
+Finders auto-detect snacks.nvim, then telescope, then `vim.ui.select`
+(`picker.backend` to force one). Two deeper integrations are available:
+
+**Snacks sources** — merge into your snacks config, then call
+`:lua Snacks.picker.ansible_vault_secrets()` / `ansible_vault_files()`:
+
+```lua
+picker = {
+  sources = require("neoansible-vault.picker").snacks_sources(),
+},
+```
+
+**Telescope extension** — `:Telescope neoansible-vault secrets|files`
+(`require("telescope").load_extension("neoansible-vault")` if not
+auto-loaded).
 
 ## Snacks explorer integration
 

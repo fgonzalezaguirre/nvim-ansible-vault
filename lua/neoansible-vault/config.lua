@@ -8,18 +8,19 @@ local M = {}
 
 ---@class neoansible-vault.InlineConfig
 ---@field enabled boolean Enable inline `!vault` editing
----@field keymap string|nil Keymap (normal mode) to edit the vault block under the cursor
----@field encrypt_keymap string|nil Keymap (normal mode) to encrypt the value/line under the cursor
----@field decrypt_keymap string|nil Keymap (normal mode) to decrypt the vault block under the cursor back to plaintext
----@field reveal_keymap string|nil Keymap (normal mode) to toggle reveal mode (decrypt all secrets in place)
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field hover boolean Map K to a decrypted hover preview on vault blocks (falls back to default K)
 ---@field float neoansible-vault.FloatConfig
 
+---@class neoansible-vault.KeymapsConfig
+---@field toggle string|nil Encrypt the plaintext under the cursor / decrypt the block under the cursor
+---@field find_buffer string|nil Find vault secrets in the current buffer
+---@field find_project string|nil Find vault secrets and encrypted files in the project
+---@field reveal_secret string|nil Reveal/edit the secret under the cursor (floating editor)
+---@field reveal_buffer string|nil Reveal/edit all secrets in the buffer in place
+
 ---@class neoansible-vault.PickerConfig
 ---@field enabled boolean Enable the secret picker
----@field keymap string|nil Keymap (normal mode) to pick a secret in the current buffer
----@field files_keymap string|nil Keymap (normal mode) to pick a vault-encrypted file in the project
 ---@field backend "auto"|"snacks"|"telescope"|"select" Picker backend (auto tries snacks, then telescope, then vim.ui.select)
 
 ---@class neoansible-vault.ConcealConfig
@@ -40,6 +41,7 @@ local M = {}
 ---@field inline neoansible-vault.InlineConfig
 ---@field picker neoansible-vault.PickerConfig
 ---@field conceal neoansible-vault.ConcealConfig
+---@field keymaps neoansible-vault.KeymapsConfig
 
 ---@type neoansible-vault.Config
 M.defaults = {
@@ -56,10 +58,6 @@ M.defaults = {
   keymap_filetypes = { "yaml", "yaml.ansible" },
   inline = {
     enabled = true,
-    keymap = "<leader>ve",
-    encrypt_keymap = "<leader>vs",
-    decrypt_keymap = "<leader>vd",
-    reveal_keymap = "<leader>vr",
     treesitter = true,
     hover = true,
     float = {
@@ -70,12 +68,17 @@ M.defaults = {
   },
   picker = {
     enabled = true,
-    keymap = "<leader>vl",
-    files_keymap = "<leader>vf",
     backend = "auto",
   },
   conceal = {
     enabled = true,
+  },
+  keymaps = {
+    toggle = "<leader>ve",
+    find_buffer = "<leader>vf",
+    find_project = "<leader>vF",
+    reveal_secret = "<leader>vr",
+    reveal_buffer = "<leader>vR",
   },
 }
 

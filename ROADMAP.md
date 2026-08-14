@@ -42,3 +42,8 @@
 - [x] vault file picker (`:AnsibleVaultFiles`, `<leader>vf`)
 - [x] reveal mode: in-place decrypt-all with re-encrypt on write
       (`:AnsibleVaultReveal`, `<leader>vr`)
+- [x] interface cleanup
+      (single `keymaps` config table; `<leader>ve` encrypt/decrypt toggle;
+      `<leader>vf`/`<leader>vF` find in buffer/project; `<leader>vr`/`<leader>vR`
+      reveal secret/buffer; snacks.win edit float; snacks picker sources;
+      telescope extension)

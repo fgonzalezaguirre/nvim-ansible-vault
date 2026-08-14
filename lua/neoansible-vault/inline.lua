@@ -89,27 +89,64 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
     math.min(math.max(content_width + 2, vim.fn.strdisplaywidth(footer), vim.fn.strdisplaywidth(title), 44), max_w)
   local height = math.min(math.max(#to_lines(plaintext), 3), max_h)
 
-  local win = vim.api.nvim_open_win(fbuf, true, {
-    relative = "editor",
-    row = math.floor((vim.o.lines - height) / 2),
-    col = math.floor((vim.o.columns - width) / 2),
-    width = width,
-    height = height,
-    style = "minimal",
-    border = cfg.border,
-    title = title,
-    title_pos = "center",
-    footer = footer,
-    footer_pos = "center",
-  })
-  vim.wo[win].wrap = false
-  vim.wo[win].scrolloff = 0
-  vim.wo[win].sidescrolloff = 0
+  local wo = { wrap = false, scrolloff = 0, sidescrolloff = 0 }
 
-  local function close()
-    if vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_close(win, true)
+  local win, close
+  local ok, snacks = pcall(require, "snacks")
+  local sw = nil
+  if ok and snacks.win then
+    -- LazyVim-native look: backdrop dimming, consistent border/footer.
+    ok, sw = pcall(snacks.win, {
+      buf = fbuf,
+      enter = true,
+      width = width,
+      height = height,
+      border = cfg.border,
+      title = title,
+      footer = footer,
+      backdrop = 60,
+      wo = wo,
+      keys = {
+        q = "close",
+        ["<esc>"] = "close",
+        ["<cr>"] = function()
+          vim.cmd.write()
+        end,
+      },
+    })
+    if ok and sw then
+      win = sw.win
+      close = function()
+        sw:close()
+      end
     end
+  end
+  if not win then
+    win = vim.api.nvim_open_win(fbuf, true, {
+      relative = "editor",
+      row = math.floor((vim.o.lines - height) / 2),
+      col = math.floor((vim.o.columns - width) / 2),
+      width = width,
+      height = height,
+      style = "minimal",
+      border = cfg.border,
+      title = title,
+      title_pos = "center",
+      footer = footer,
+      footer_pos = "center",
+    })
+    for k, v in pairs(wo) do
+      vim.wo[win][k] = v
+    end
+
+    local function close_win()
+      if vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_win_close(win, true)
+      end
+    end
+    close = close_win
+    vim.keymap.set("n", "<Esc>", close, { buffer = fbuf, desc = "Cancel vault edit" })
+    vim.keymap.set("n", "q", close, { buffer = fbuf, desc = "Cancel vault edit" })
   end
 
   local function save()
@@ -137,11 +174,11 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
     desc = "neoansible-vault: re-encrypt inline secret",
     callback = save,
   })
-  vim.keymap.set("n", "<CR>", function()
-    vim.cmd.write()
-  end, { buffer = fbuf, desc = "Save and re-encrypt" })
-  vim.keymap.set("n", "<Esc>", close, { buffer = fbuf, desc = "Cancel vault edit" })
-  vim.keymap.set("n", "q", close, { buffer = fbuf, desc = "Cancel vault edit" })
+  if not sw then
+    vim.keymap.set("n", "<CR>", function()
+      vim.cmd.write()
+    end, { buffer = fbuf, desc = "Save and re-encrypt" })
+  end
 end
 
 ---Find the vault region under the cursor, honoring the treesitter option.
@@ -335,7 +372,19 @@ function M.encrypt_selection(line1, line2, vault_id)
   end)
 end
 
----Register the inline-edit keymap (buffer-local to yaml buffers). Idempotent.
+---Toggle the cursor line: decrypt the `!vault` block under the cursor, or
+---encrypt the plaintext value/line under the cursor.
+function M.toggle()
+  local buf = vim.api.nvim_get_current_buf()
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  if region_at(buf, row) then
+    M.decrypt_value()
+  else
+    M.encrypt_selection(row + 1, row + 1)
+  end
+end
+
+---Register the inline keymaps (buffer-local to yaml buffers). Idempotent.
 function M.setup()
   if group then
     return
@@ -344,16 +393,13 @@ function M.setup()
 
   local cfg = config.get().inline
   if cfg.enabled then
-    require("neoansible-vault.keymaps").setup(group, cfg.keymap, function()
+    local km = config.get().keymaps
+    require("neoansible-vault.keymaps").setup(group, km.toggle, function()
+      M.toggle()
+    end, "Ansible vault: encrypt/decrypt under cursor")
+    require("neoansible-vault.keymaps").setup(group, km.reveal_secret, function()
       M.edit()
-    end, "Edit ansible vault secret under cursor")
-    require("neoansible-vault.keymaps").setup(group, cfg.encrypt_keymap, function()
-      local row = vim.api.nvim_win_get_cursor(0)[1]
-      M.encrypt_selection(row, row)
-    end, "Encrypt the value/line under cursor into a !vault block")
-    require("neoansible-vault.keymaps").setup(group, cfg.decrypt_keymap, function()
-      M.decrypt_value()
-    end, "Decrypt the !vault block under cursor to plaintext")
+    end, "Ansible vault: reveal/edit secret under cursor")
   end
   if cfg.enabled and cfg.hover then
     -- Global on purpose: buffer-local (e.g. LSP hover) K mappings still take

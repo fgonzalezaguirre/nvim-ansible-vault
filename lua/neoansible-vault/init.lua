@@ -45,6 +45,11 @@ function M.decrypt_inline()
   require("neoansible-vault.inline").decrypt_value()
 end
 
+---Toggle the cursor line: decrypt a `!vault` block, or encrypt a plaintext value.
+function M.toggle_inline()
+  require("neoansible-vault.inline").toggle()
+end
+
 ---Decrypt the current buffer; it will be re-encrypted on write.
 function M.decrypt_buffer()
   require("neoansible-vault.file").decrypt_buffer()

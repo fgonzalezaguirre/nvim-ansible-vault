@@ -365,9 +365,9 @@ function M.setup()
 
   local cfg = config.get().inline
   if cfg.enabled then
-    require("neoansible-vault.keymaps").setup(group, cfg.reveal_keymap, function()
+    require("neoansible-vault.keymaps").setup(group, config.get().keymaps.reveal_buffer, function()
       M.toggle()
-    end, "Reveal/edit all ansible vault secrets in this buffer")
+    end, "Ansible vault: reveal/edit all secrets in buffer")
   end
 end
 

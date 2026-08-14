@@ -98,4 +98,33 @@ function tests.pick_falls_back_to_vim_ui_select()
   vim.cmd.bwipeout({ bang = true })
 end
 
+function tests.collect_files_finds_vault_files()
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+
+  local enc = dir .. "/roles/web/vars/vault.yml"
+  vim.fn.mkdir(vim.fs.dirname(enc), "p")
+  h.write_file(enc, "k: v\n")
+  h.vault_encrypt(enc, passfile, "prod")
+
+  local plain = dir .. "/roles/web/vars/main.yml"
+  h.write_file(plain, "k: v\n")
+  -- hidden and skipped dirs must not be scanned
+  local ignored = dir .. "/.git/hooks/vault.sh"
+  vim.fn.mkdir(vim.fs.dirname(ignored), "p")
+  h.write_file(ignored, "$ANSIBLE_VAULT;1.1;AES256\n6162\n")
+
+  local found = picker.collect_files(dir)
+  h.assert_eq(#found, 1, "only the vault file is collected")
+  h.assert_eq(found[1].rel, "roles/web/vars/vault.yml")
+  h.assert_eq(found[1].vault_id, "prod")
+  h.assert_true(found[1].text:match("%[prod%]") ~= nil)
+end
+
+function tests.collect_files_empty_tree()
+  local dir = h.tmpdir()
+  h.write_file(dir .. "/plain.yml", "k: v\n")
+  h.assert_eq(#picker.collect_files(dir), 0)
+end
+
 return tests

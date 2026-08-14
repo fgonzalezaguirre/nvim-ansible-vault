@@ -37,5 +37,8 @@
       (`<leader>ve`/`<leader>vl` only exist in yaml buffers; `K` falls back
       to default K; `<leader>v` is unused by LazyVim)
 - [x] encrypt value/line under cursor (`<leader>vs`)
+- [x] decrypt a block back to plaintext
+      (`:AnsibleVaultDecryptString`, `<leader>vd`)
+- [x] vault file picker (`:AnsibleVaultFiles`, `<leader>vf`)
 - [x] reveal mode: in-place decrypt-all with re-encrypt on write
       (`:AnsibleVaultReveal`, `<leader>vr`)

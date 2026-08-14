@@ -175,6 +175,129 @@ function M.pick()
   pick_select(entries)
 end
 
+---Directories that never contain user vault files worth listing.
+local SKIP_DIRS = { node_modules = true, vendor = true, __pycache__ = true, [".terraform"] = true, [".venv"] = true }
+
+---Recursively collect vault-encrypted files under `root` (whole-file
+---`$ANSIBLE_VAULT;` header). Hidden directories are skipped.
+---@param root string
+---@return { path: string, rel: string, vault_id: string|nil, text: string }[]
+function M.collect_files(root)
+  root = vim.fs.normalize(root)
+  local out = {}
+  local function scan(dir)
+    for name, kind in vim.fs.dir(dir) do
+      local path = dir .. "/" .. name
+      if kind == "directory" then
+        if not SKIP_DIRS[name] and not vim.startswith(name, ".") then
+          scan(path)
+        end
+      elseif kind == "file" then
+        local header = detect.file_header(path)
+        if header then
+          local rel = path:sub(#root + 2)
+          table.insert(out, {
+            path = path,
+            rel = rel,
+            vault_id = header.vault_id,
+            text = rel .. (header.vault_id and (" [" .. header.vault_id .. "]") or ""),
+          })
+        end
+      end
+    end
+  end
+  scan(root)
+  table.sort(out, function(a, b)
+    return a.rel < b.rel
+  end)
+  return out
+end
+
+---Open a vault file picker rooted at cwd; confirming edits the file
+---(transparent decrypt kicks in on read).
+function M.pick_file()
+  local root = (vim.uv or vim.loop).cwd()
+  local entries = M.collect_files(root)
+  if #entries == 0 then
+    notify("no vault-encrypted files under " .. root, vim.log.levels.WARN)
+    return
+  end
+
+  local function open(e)
+    vim.cmd.edit(vim.fn.fnameescape(e.path))
+  end
+
+  local backend = config.get().picker.backend
+  if backend == "snacks" or backend == "auto" then
+    local ok, snacks = pcall(require, "snacks")
+    if ok and snacks.picker then
+      snacks.picker.pick({
+        title = "Ansible vault files",
+        items = vim.tbl_map(function(e)
+          return { text = e.text, entry = e, file = e.path, pos = { 1, 0 } }
+        end, entries),
+        format = "text",
+        confirm = function(p, item)
+          p:close()
+          if item then
+            open(item.entry)
+          end
+        end,
+      })
+      return
+    elseif backend == "snacks" then
+      notify("snacks.nvim picker not available", vim.log.levels.ERROR)
+      return
+    end
+  end
+  if backend == "telescope" or backend == "auto" then
+    local ok = pcall(require, "telescope.pickers")
+    if ok then
+      local pickers = require("telescope.pickers")
+      local finders = require("telescope.finders")
+      local actions = require("telescope.actions")
+      local action_state = require("telescope.actions.state")
+      local conf = require("telescope.config").values
+      pickers
+        .new({}, {
+          prompt_title = "Ansible vault files",
+          finder = finders.new_table({
+            results = entries,
+            entry_maker = function(e)
+              return { value = e, display = e.text, ordinal = e.rel, filename = e.path, lnum = 1 }
+            end,
+          }),
+          sorter = conf.generic_sorter({}),
+          attach_mappings = function(prompt_bufnr)
+            actions.select_default:replace(function()
+              local selection = action_state.get_selected_entry()
+              actions.close(prompt_bufnr)
+              if selection then
+                open(selection.value)
+              end
+            end)
+            return true
+          end,
+        })
+        :find()
+      return
+    elseif backend == "telescope" then
+      notify("telescope.nvim not available", vim.log.levels.ERROR)
+      return
+    end
+  end
+  vim.ui.select(entries, {
+    prompt = "Ansible vault files",
+    format_item = function(e)
+      return e.text
+    end,
+  }, function(choice)
+    if choice then
+      open(choice)
+    end
+  end)
+end
+
 ---Register the picker keymap (buffer-local to yaml buffers). Idempotent.
 function M.setup()
   if group then
@@ -187,6 +310,9 @@ function M.setup()
     require("neoansible-vault.keymaps").setup(group, cfg.keymap, function()
       M.pick()
     end, "Pick an ansible vault secret in this buffer")
+    require("neoansible-vault.keymaps").setup(group, cfg.files_keymap, function()
+      M.pick_file()
+    end, "Pick an ansible vault file in the project")
   end
 end
 

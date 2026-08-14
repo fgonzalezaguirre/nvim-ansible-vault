@@ -58,33 +58,6 @@ local function each(items, fn, done)
   step()
 end
 
----Format a decrypted value as yaml lines at `key_indent`. Single-line values
----stay inline (`key: value`) unless they would break plain-scalar YAML;
----anything else becomes a `key: |-` literal block.
----@param key string
----@param key_indent integer
----@param value string
----@return string[]
-local function plaintext_lines(key, key_indent, value)
-  local indent = string.rep(" ", key_indent)
-  value = value:gsub("\n$", "")
-  local single = not value:find("\n", 1, true)
-    and value == vim.trim(value)
-    and not value:find(": ", 1, true)
-    and not value:find(" #", 1, true)
-  if single then
-    if value == "" then
-      return { indent .. key .. ": ''" }
-    end
-    return { indent .. key .. ": " .. value }
-  end
-  local out = { indent .. key .. ": |-" }
-  for line in (value .. "\n"):gmatch("(.-)\n") do
-    table.insert(out, indent .. "  " .. line)
-  end
-  return out
-end
-
 ---Locate a revealed entry's key line in `lines` (1-indexed), searching from
 ---`from_row`. Keys are matched by indent + name only.
 ---@return integer|nil row 1-indexed row of the key line
@@ -318,7 +291,7 @@ local function reveal(buf)
         e.region.start_row,
         e.region.end_row,
         false,
-        plaintext_lines(e.key, e.key_indent, e.value)
+        inline.plaintext_lines(e.key, e.key_indent, e.value)
       )
     end
 

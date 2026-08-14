@@ -41,6 +41,7 @@ The plugin works out of the box with defaults. To configure: >lua
       enabled = true,
       keymap = "<leader>ve",
       encrypt_keymap = "<leader>vs",
+      decrypt_keymap = "<leader>vd",
       reveal_keymap = "<leader>vr",
       treesitter = true,
       hover = true,
@@ -49,6 +50,7 @@ The plugin works out of the box with defaults. To configure: >lua
     picker = {
       enabled = true,
       keymap = "<leader>vl",
+      files_keymap = "<leader>vf",
       backend = "auto",
     },
     conceal = {
@@ -75,6 +77,8 @@ Options ~
   inline.keymap         Normal-mode mapping for |:AnsibleVaultEdit|.
   inline.encrypt_keymap Normal-mode mapping to encrypt the value/line under
                         the cursor (default <leader>vs).
+  inline.decrypt_keymap Normal-mode mapping for |:AnsibleVaultDecryptString|
+                        (default <leader>vd).
   inline.reveal_keymap  Normal-mode mapping for |:AnsibleVaultReveal|
                         (default <leader>vr).
   inline.treesitter     Use tree-sitter (YAML parser) to reject false-positive
@@ -158,6 +162,22 @@ to ansible-vault via a 0600 temp file deleted after each call.
                         with vault ciphertext. The optional [vault-id]
                         argument (or the vault_id option) labels the file.
 
+                                               *:AnsibleVaultDecryptString*
+:AnsibleVaultDecryptString
+                        Decrypt the `!vault` block under the cursor back to
+                        plaintext in place (`key: value`, or a `key: |-`
+                        literal block for multi-line values). Nothing is
+                        re-encrypted: the value stays plaintext until you
+                        encrypt it again. The inverse of
+                        |:AnsibleVaultEncryptString|.
+
+                                                        *:AnsibleVaultFiles*
+:AnsibleVaultFiles      List vault-encrypted files under the cwd (whole-file
+                        $ANSIBLE_VAULT; header; hidden dirs and common noise
+                        like .git/node_modules are skipped) and open the
+                        chosen one. Uses snacks/telescope/vim.ui.select per
+                        picker.backend.
+
                                                        *:AnsibleVaultRekey*
 :AnsibleVaultRekey      Rekey the vault file backing the current buffer:
                         prompts for a new password and optionally a new
@@ -187,8 +207,10 @@ default), so they never clash with mappings in unrelated buffers.
 
 <leader>ve              |:AnsibleVaultEdit| (configurable via inline.keymap)
 <leader>vl              |:AnsibleVaultSecrets| (configurable via picker.keymap)
+<leader>vf              |:AnsibleVaultFiles| (configurable via picker.files_keymap)
 <leader>vs              Encrypt the value/line under cursor
                         (inline.encrypt_keymap)
+<leader>vd              |:AnsibleVaultDecryptString| (inline.decrypt_keymap)
 <leader>vr              |:AnsibleVaultReveal| (inline.reveal_keymap)
 K                       Decrypted preview of the block under the cursor
                         (inline.hover; global, but buffer-local mappings such

@@ -10,6 +10,7 @@ local M = {}
 ---@field enabled boolean Enable inline `!vault` editing
 ---@field keymap string|nil Keymap (normal mode) to edit the vault block under the cursor
 ---@field encrypt_keymap string|nil Keymap (normal mode) to encrypt the value/line under the cursor
+---@field decrypt_keymap string|nil Keymap (normal mode) to decrypt the vault block under the cursor back to plaintext
 ---@field reveal_keymap string|nil Keymap (normal mode) to toggle reveal mode (decrypt all secrets in place)
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field hover boolean Map K to a decrypted hover preview on vault blocks (falls back to default K)
@@ -18,6 +19,7 @@ local M = {}
 ---@class neoansible-vault.PickerConfig
 ---@field enabled boolean Enable the secret picker
 ---@field keymap string|nil Keymap (normal mode) to pick a secret in the current buffer
+---@field files_keymap string|nil Keymap (normal mode) to pick a vault-encrypted file in the project
 ---@field backend "auto"|"snacks"|"telescope"|"select" Picker backend (auto tries snacks, then telescope, then vim.ui.select)
 
 ---@class neoansible-vault.ConcealConfig
@@ -56,6 +58,7 @@ M.defaults = {
     enabled = true,
     keymap = "<leader>ve",
     encrypt_keymap = "<leader>vs",
+    decrypt_keymap = "<leader>vd",
     reveal_keymap = "<leader>vr",
     treesitter = true,
     hover = true,
@@ -68,6 +71,7 @@ M.defaults = {
   picker = {
     enabled = true,
     keymap = "<leader>vl",
+    files_keymap = "<leader>vf",
     backend = "auto",
   },
   conceal = {

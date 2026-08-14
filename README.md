@@ -10,7 +10,10 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
   detected and preserved.
 - **Inline secret editing** — cursor on a `!vault` block, one keypress, edit
   the decrypted value in a floating window, save to re-encrypt in place.
-- **Encrypt new secrets** — turn any line or selection into a `!vault` block.
+- **Encrypt new secrets** — turn any line or selection into a `!vault` block;
+  decrypt a single block back to plaintext with `:AnsibleVaultDecryptString`.
+- **Vault file picker** — `:AnsibleVaultFiles` lists vault-encrypted files in
+  the project (snacks/telescope/`vim.ui.select`) and opens the chosen one.
 - **Secret picker** — list all `!vault` secrets in the buffer via snacks.nvim,
   telescope, or a plain `vim.ui.select` fallback; pick one to jump straight
   into the edit float.
@@ -99,6 +102,7 @@ require("neoansible-vault").setup({
     enabled = true,
     keymap = "<leader>ve",      -- edit !vault block under cursor
     encrypt_keymap = "<leader>vs", -- encrypt the value/line under cursor
+    decrypt_keymap = "<leader>vd", -- decrypt !vault block under cursor to plaintext
     reveal_keymap = "<leader>vr",  -- toggle in-place editing of all secrets
     treesitter = true,          -- use YAML tree-sitter parser to avoid false
                                 -- positives when available (optional)
@@ -108,6 +112,7 @@ require("neoansible-vault").setup({
   picker = {
     enabled = true,
     keymap = "<leader>vl",      -- pick a !vault secret in the buffer
+    files_keymap = "<leader>vf", -- pick a vault-encrypted file in the project
     backend = "auto",           -- "auto" | "snacks" | "telescope" | "select"
   },
   conceal = {
@@ -148,6 +153,8 @@ The buffer shows a `[vault-id: x]` note when applicable.
 | `:AnsibleVaultDecrypt` | Decrypt the current buffer (re-encrypts on write) |
 | `:AnsibleVaultEncrypt [vault-id]` | Encrypt the current buffer, replacing it with ciphertext |
 | `:AnsibleVaultRekey` | Re-encrypt the file with a new password (and optionally a new vault-id) |
+| `:AnsibleVaultDecryptString` | Decrypt the `!vault` block under the cursor back to plaintext |
+| `:AnsibleVaultFiles` | Pick a vault-encrypted file in the project and open it |
 | `:AnsibleVaultClearCache` | Forget cached (prompted) passwords |
 
 ### Inline `!vault` blocks
@@ -171,6 +178,10 @@ db_password: !vault |
   buffer. Multi-line and vault-id'd secrets are supported.
 - Cursor on a `key: value` line → `<leader>vs` encrypts just the value
   (equivalent to `:AnsibleVaultEncryptString` on the current line).
+- The inverse: cursor on a `!vault` block → `<leader>vd` or
+  `:AnsibleVaultDecryptString` replaces the block with plaintext
+  (`key: value`, or `key: |-` for multi-line). Nothing is re-encrypted — the
+  value stays plaintext until you encrypt it again.
 - Visually select text (or put the cursor on a `key: value` line) →
   `:'<,'>AnsibleVaultEncryptString` → prompts for a variable name and
   replaces the selection with a `!vault` block. For a single `key: value`
@@ -193,9 +204,38 @@ precedence over it.
 | --- | --- |
 | `<leader>ve` | Edit the `!vault` block under the cursor (float) |
 | `<leader>vl` | Pick a secret in the buffer (snacks/telescope/select) |
+| `<leader>vf` | Pick a vault-encrypted file in the project |
 | `<leader>vs` | Encrypt the value/line under the cursor |
+| `<leader>vd` | Decrypt the block under the cursor back to plaintext |
 | `<leader>vr` | Reveal/edit all secrets in place (`:w` re-encrypts) |
 | `K` | Decrypted hover preview of the block under cursor |
+
+## Snacks explorer integration
+
+`:AnsibleVaultFiles` already uses snacks when installed. To also mark
+vault-encrypted files in the snacks explorer, add a custom `format` to your
+snacks config:
+
+```lua
+picker = {
+  sources = {
+    explorer = {
+      format = function(item, p)
+        local ret = require("snacks.picker.format").file(item, p)
+        if item.file and not item.dir then
+          local fd = io.open(item.file, "r")
+          local first = fd and fd:read("*l")
+          if fd then fd:close() end
+          if first and first:match("^%$ANSIBLE_VAULT;") then
+            table.insert(ret, { " [vault]", "DiagnosticWarn" })
+          end
+        end
+        return ret
+      end,
+    },
+  },
+},
+```
 
 ## Statusline
 

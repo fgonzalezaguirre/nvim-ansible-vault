@@ -222,6 +222,69 @@ function M.hover()
   return true
 end
 
+---Format a decrypted value as yaml lines at `key_indent`. Single-line values
+---stay inline (`key: value`) unless they would break plain-scalar YAML;
+---anything else becomes a `key: |-` literal block.
+---Also used by reveal.lua.
+---@param key string
+---@param key_indent integer
+---@param value string
+---@return string[]
+function M.plaintext_lines(key, key_indent, value)
+  local indent = string.rep(" ", key_indent)
+  value = value:gsub("\n$", "")
+  local single = not value:find("\n", 1, true)
+    and value == vim.trim(value)
+    and not value:find(": ", 1, true)
+    and not value:find(" #", 1, true)
+  if single then
+    if value == "" then
+      return { indent .. key .. ": ''" }
+    end
+    return { indent .. key .. ": " .. value }
+  end
+  local out = { indent .. key .. ": |-" }
+  for line in (value .. "\n"):gmatch("(.-)\n") do
+    table.insert(out, indent .. "  " .. line)
+  end
+  return out
+end
+
+---Decrypt the inline vault block under the cursor, replacing it with the
+---plaintext value in place (`key: value`, or `key: |-` for multi-line).
+---The complement of encrypt_selection: nothing is re-encrypted on write.
+function M.decrypt_value()
+  local buf = vim.api.nvim_get_current_buf()
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local region = region_at(buf, row)
+  if not region then
+    notify_err("no !vault block under the cursor")
+    return
+  end
+
+  local header = detect.parse_header((region.blob_lines[1]:gsub("^%s*", "")))
+  local vault_id = header and header.vault_id or nil
+
+  password.get({ start_dir = buffer_dir(buf), vault_id = vault_id }, function(cred, err)
+    if not cred then
+      notify_err(err or "no vault password available")
+      return
+    end
+    cli.decrypt_blob(detect.region_blob_text(region), cred, function(dec_err, plaintext)
+      if dec_err then
+        notify_err("failed to decrypt " .. region.key .. ": " .. dec_err)
+        return
+      end
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+      local new_lines = M.plaintext_lines(region.key, region.key_indent, plaintext)
+      vim.api.nvim_buf_set_lines(buf, region.start_row, region.end_row, false, new_lines)
+      notify(("decrypted %s; it stays plaintext until re-encrypted"):format(region.key), vim.log.levels.INFO)
+    end)
+  end)
+end
+
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
@@ -288,6 +351,9 @@ function M.setup()
       local row = vim.api.nvim_win_get_cursor(0)[1]
       M.encrypt_selection(row, row)
     end, "Encrypt the value/line under cursor into a !vault block")
+    require("neoansible-vault.keymaps").setup(group, cfg.decrypt_keymap, function()
+      M.decrypt_value()
+    end, "Decrypt the !vault block under cursor to plaintext")
   end
   if cfg.enabled and cfg.hover then
     -- Global on purpose: buffer-local (e.g. LSP hover) K mappings still take

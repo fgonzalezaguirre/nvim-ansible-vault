@@ -98,6 +98,53 @@ function tests.edit_outside_block_notifies_and_does_nothing()
   reset()
 end
 
+function tests.decrypt_value_replaces_block_with_plaintext()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local buf = make_yaml_buffer("s3cr3t")
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+
+  require("neoansible-vault").decrypt_inline()
+  h.assert_true(
+    h.wait_for(function()
+      return vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1] == "db_password: s3cr3t"
+    end),
+    "block was not decrypted in place"
+  )
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  h.assert_eq(lines, { "plain: value", "db_password: s3cr3t", "after: done" }, "block replaced by plaintext")
+
+  -- nothing flagged for re-encryption: :w writes plaintext as-is
+  vim.cmd.write()
+  local fd = assert(io.open(vim.api.nvim_buf_get_name(buf), "r"))
+  local disk = fd:read("*a")
+  fd:close()
+  h.assert_true(disk:match("db_password: s3cr3t") ~= nil, "plaintext written to disk")
+  h.assert_true(not disk:match("%$ANSIBLE_VAULT;"), "no ciphertext on disk")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.decrypt_value_outside_block_notifies()
+  reset()
+  require("neoansible-vault").setup({ prompt = false })
+
+  local buf = make_yaml_buffer("x")
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  local before = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  require("neoansible-vault").decrypt_inline()
+  vim.wait(300, function()
+    return false
+  end)
+  h.assert_eq(vim.api.nvim_buf_get_lines(buf, 0, -1, false), before, "buffer unchanged")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.hover_shows_decrypted_preview()
   reset()
   require("neoansible-vault").setup({ prompt = false })

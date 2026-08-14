@@ -27,12 +27,22 @@ function M.toggle_reveal()
   require("neoansible-vault.reveal").toggle()
 end
 
+---Pick a vault-encrypted file in the project and open it.
+function M.pick_vault_file()
+  require("neoansible-vault.picker").pick_file()
+end
+
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
 ---@param vault_id string|nil vault-id label (defaults to config.vault_id)
 function M.encrypt_selection(line1, line2, vault_id)
   require("neoansible-vault.inline").encrypt_selection(line1, line2, vault_id)
+end
+
+---Decrypt the `!vault` block under the cursor into plaintext lines.
+function M.decrypt_inline()
+  require("neoansible-vault.inline").decrypt_value()
 end
 
 ---Decrypt the current buffer; it will be re-encrypted on write.

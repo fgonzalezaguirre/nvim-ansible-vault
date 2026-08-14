@@ -5,7 +5,11 @@ local root = vim.fs.dirname(vim.fs.dirname(source))
 vim.opt.runtimepath:prepend(root)
 package.path = package.path .. ";" .. root .. "/tests/?.lua"
 
-vim.cmd("filetype on")
+vim.cmd("filetype plugin indent on")
+
+-- ftdetect/*.lua is sourced during real startup; under `-l` we must load it
+-- explicitly after adjusting runtimepath.
+vim.cmd.runtime("ftdetect/ansible.lua")
 
 -- Install the plugin like a user would (commands + auto setup).
 vim.cmd.runtime("plugin/neoansible-vault.lua")

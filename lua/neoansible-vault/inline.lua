@@ -433,6 +433,68 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
   end
 end
 
+---Rekey the inline secret under the cursor: decrypt with the current
+---password, then re-encrypt with a new password and optionally a new
+---vault-id label (ansible-vault rekey only works on whole files).
+function M.rekey()
+  local buf = vim.api.nvim_get_current_buf()
+  local row = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local region = region_at(buf, row)
+  if not region then
+    notify_err("no !vault block under the cursor")
+    return
+  end
+
+  local header = detect.parse_header((region.blob_lines[1]:gsub("^%s*", "")))
+  local vault_id = header and header.vault_id or nil
+
+  password.get({ start_dir = buffer_dir(buf), vault_id = vault_id }, function(old_cred, err)
+    if not old_cred then
+      notify_err(err or "no vault password available")
+      return
+    end
+    cli.decrypt_blob(detect.region_blob_text(region), old_cred, function(dec_err, plaintext)
+      if dec_err then
+        notify_err("failed to decrypt " .. region.key .. ": " .. dec_err)
+        return
+      end
+      vim.ui.input({ prompt = "New vault password: ", secret = true }, function(new_pass)
+        if not new_pass or new_pass == "" then
+          return
+        end
+        local id_prompt = ("New vault-id (empty = keep %s): "):format(vault_id or "none")
+        vim.ui.input({ prompt = id_prompt }, function(new_id)
+          if new_id == "" then
+            new_id = nil
+          end
+          local new_cred = { kind = "secret", value = new_pass, source = "prompt" }
+          local plain = (plaintext:gsub("\n$", ""))
+          cli.encrypt_string(plain, region.key, new_cred, new_id or vault_id, function(enc_err, block)
+            if enc_err then
+              notify_err("re-encryption failed: " .. enc_err)
+              return
+            end
+            if not vim.api.nvim_buf_is_valid(buf) then
+              return
+            end
+            local new_lines = M.indent_block(block, region.key_indent, region.blob_indent)
+            vim.api.nvim_buf_set_lines(buf, region.start_row, region.end_row, false, new_lines)
+            -- Any cached (old) password is now wrong for this secret.
+            password.clear_cache()
+            notify(
+              ("rekeyed %s%s"):format(
+                region.key,
+                (new_id or vault_id) and (" [vault-id: " .. (new_id or vault_id) .. "]") or ""
+              ),
+              vim.log.levels.INFO
+            )
+          end)
+        end)
+      end)
+    end)
+  end)
+end
+
 ---Toggle the cursor line: decrypt the `!vault` block under the cursor, or
 ---encrypt the plaintext value/line under the cursor.
 function M.toggle()
@@ -458,9 +520,12 @@ function M.setup()
     require("neoansible-vault.keymaps").setup(group, km.toggle, function()
       M.toggle()
     end, "Ansible vault: encrypt/decrypt under cursor")
-    require("neoansible-vault.keymaps").setup(group, km.reveal_secret, function()
+    require("neoansible-vault.keymaps").setup(group, km.edit_secret, function()
       M.edit()
     end, "Ansible vault: reveal/edit secret under cursor")
+    require("neoansible-vault.keymaps").setup(group, km.rekey_secret, function()
+      M.rekey()
+    end, "Ansible vault: rekey secret under cursor")
   end
   if cfg.enabled and cfg.hover then
     -- Global on purpose: buffer-local (e.g. LSP hover) K mappings still take

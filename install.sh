@@ -168,18 +168,39 @@ do_install_lazy() {
   cat >"$spec_file" <<EOF
 -- $LAZY_MARKER: managed by $PLUGIN_NAME install.sh, safe to delete
 return {
-  dir = "$REPO_ROOT",
-  -- once published, replace \`dir\` with the git URL, e.g. "you/$PLUGIN_NAME",
-  -- load before any file read so vault files decrypt transparently on open
-  event = "BufReadPre",
-  keys = {
-    { "<leader>ve", desc = "Ansible vault: encrypt/decrypt under cursor" },
-    { "<leader>vf", desc = "Ansible vault: find secrets in buffer" },
-    { "<leader>vF", desc = "Ansible vault: find secrets in project" },
-    { "<leader>vr", desc = "Ansible vault: reveal/edit secret under cursor" },
-    { "<leader>vR", desc = "Ansible vault: reveal/edit all secrets in buffer" },
+  {
+    dir = "$REPO_ROOT",
+    -- once published, replace \`dir\` with the git URL, e.g. "you/$PLUGIN_NAME",
+    -- load before any file read so vault files decrypt transparently on open
+    event = "BufReadPre",
+    keys = {
+      { "<leader>avv", desc = "Ansible vault: encrypt/decrypt under cursor" },
+      { "<leader>avV", desc = "Ansible vault: encrypt/decrypt buffer" },
+      { "<leader>ave", desc = "Ansible vault: reveal/edit secret under cursor" },
+      { "<leader>avE", desc = "Ansible vault: reveal/edit all secrets in buffer" },
+      { "<leader>avf", desc = "Ansible vault: find secrets in buffer" },
+      { "<leader>avF", desc = "Ansible vault: find secrets in project" },
+      { "<leader>avk", desc = "Ansible vault: rekey secret under cursor" },
+      { "<leader>avK", desc = "Ansible vault: rekey file" },
+    },
+    opts = {},
   },
-  opts = {},
+  {
+    -- name the <leader>a / <leader>av groups in the which-key popup:
+    -- the function form merges into the accumulated which-key opts
+    -- (returning a new table here would replace them and break the config)
+    "folke/which-key.nvim",
+    optional = true,
+    opts = function(_, opts)
+      local ok, spec = pcall(function()
+        return require("$PLUGIN_NAME").which_key_spec()
+      end)
+      if ok and type(spec) == "table" and #spec > 0 then
+        opts.spec = opts.spec or {}
+        vim.list_extend(opts.spec, spec)
+      end
+    end,
+  },
 }
 EOF
   log "wrote lazy.nvim spec: $spec_file"

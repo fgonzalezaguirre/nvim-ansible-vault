@@ -5,7 +5,7 @@ local h = require("helpers")
 local tests = {}
 
 local function reset()
-  config.setup({ prompt = false, confirm_default = false })
+  config.setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   password.clear_cache()
   vim.env.ANSIBLE_VAULT_PASSWORD = nil
   vim.env.ANSIBLE_VAULT_PASSWORD_FILE = nil
@@ -31,7 +31,7 @@ end
 
 function tests.transparent_decrypt_on_open()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -53,7 +53,7 @@ end
 
 function tests.write_reencrypts_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -83,7 +83,7 @@ end
 
 function tests.vault_id_file_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -114,7 +114,7 @@ end
 
 function tests.rekey_changes_password_and_preserves_vault_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -181,7 +181,7 @@ end
 
 function tests.status_component()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -201,7 +201,12 @@ function tests.status_component()
   h.assert_eq(require("neoansible-vault").status(prod_buf), "[vault:prod]")
 
   -- encrypted file without id, auto_decrypt off: ciphertext -> [vault]
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, auto_decrypt = false })
+  require("neoansible-vault").setup({
+    prompt = false,
+    confirm_default = false,
+    confirm_decrypt = false,
+    auto_decrypt = false,
+  })
   local enc = dir .. "/enc.yml"
   h.write_file(enc, "k: v\n")
   h.vault_encrypt(enc, passfile)
@@ -219,7 +224,7 @@ end
 
 function tests.non_vault_file_untouched()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   h.write_passfile(dir)
@@ -241,7 +246,7 @@ end
 
 function tests.wrong_password_leaves_ciphertext()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir, "right-password")
@@ -264,7 +269,7 @@ end
 
 function tests.explicit_decrypt_and_encrypt_buffer()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -299,6 +304,112 @@ function tests.explicit_decrypt_and_encrypt_buffer()
     "explicit encrypt did not reset buffer state"
   )
   h.assert_true(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("^%$ANSIBLE_VAULT;") ~= nil)
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.toggle_buffer_dispatches_on_state()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local path = dir .. "/toggle.yml"
+  h.write_file(path, "mode: plain\n")
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+
+  -- plaintext -> toggle encrypts
+  require("neoansible-vault.file").toggle_buffer()
+  h.assert_true(
+    h.wait_for(function()
+      return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("^%$ANSIBLE_VAULT;") ~= nil
+    end),
+    "plaintext buffer was not encrypted"
+  )
+
+  -- ciphertext -> toggle decrypts (and flags for re-encryption on write)
+  require("neoansible-vault.file").toggle_buffer()
+  h.assert_true(
+    h.wait_for(function()
+      local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+      return lines[1] == "mode: plain"
+    end),
+    "ciphertext buffer was not decrypted"
+  )
+  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault")
+  h.assert_true(ok and state ~= nil, "decrypted buffer is flagged for re-encryption on write")
+
+  local fd = assert(io.open(path, "r"))
+  h.assert_eq(fd:read("*a"), "mode: plain\n", "file on disk untouched")
+  fd:close()
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.auto_decrypt_prompts_and_keeps_ciphertext_on_no()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, confirm_decrypt = true })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local path = dir .. "/secrets.yml"
+  h.write_file(path, "token: hidden\n")
+  h.vault_encrypt(path, passfile)
+
+  local prompt, answered = nil, false
+  local orig_select = vim.ui.select
+  vim.ui.select = function(_, opts, cb)
+    prompt = opts.prompt
+    cb("keep encrypted")
+  end
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+  h.assert_true(
+    h.wait_for(function()
+      return prompt ~= nil
+    end),
+    "no decrypt confirmation shown"
+  )
+  vim.wait(300, function()
+    return false
+  end)
+  vim.ui.select = orig_select
+
+  h.assert_eq(prompt, "Decrypt secrets.yml?")
+  h.assert_true(vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("^%$ANSIBLE_VAULT;") ~= nil, "ciphertext stays")
+  h.assert_eq(current_state(buf), nil, "buffer not flagged")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
+function tests.auto_decrypt_prompts_and_decrypts_on_yes()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, confirm_decrypt = true })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local path = dir .. "/secrets.yml"
+  h.write_file(path, "token: shown\n")
+  h.vault_encrypt(path, passfile)
+
+  local orig_select = vim.ui.select
+  vim.ui.select = function(_, _, cb)
+    cb("decrypt")
+  end
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+  h.assert_true(
+    h.wait_for(function()
+      return current_state(buf) ~= nil
+    end),
+    "buffer was not decrypted after confirmation"
+  )
+  vim.ui.select = orig_select
+  h.assert_eq(vim.api.nvim_buf_get_lines(buf, 0, -1, false), { "token: shown" })
 
   vim.cmd.bwipeout({ bang = true })
   reset()

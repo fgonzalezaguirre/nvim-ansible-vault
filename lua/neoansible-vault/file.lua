@@ -97,6 +97,8 @@ local function decrypt_into(buf, path, header)
 end
 
 ---BufReadPost handler: replace ciphertext with plaintext for vault files.
+---With `confirm_decrypt` the user is asked first: the plaintext may be
+---sensitive and should not appear unbidden.
 ---@param buf integer
 local function on_read(buf)
   local path = vim.api.nvim_buf_get_name(buf)
@@ -107,7 +109,16 @@ local function on_read(buf)
   if not header then
     return
   end
-  decrypt_into(buf, path, header)
+  if not config.get().confirm_decrypt then
+    decrypt_into(buf, path, header)
+    return
+  end
+  local label = ("Decrypt %s?"):format(vim.fn.fnamemodify(path, ":t"))
+  vim.ui.select({ "decrypt", "keep encrypted" }, { prompt = label }, function(choice)
+    if choice == "decrypt" and vim.api.nvim_buf_is_valid(buf) then
+      decrypt_into(buf, path, header)
+    end
+  end)
 end
 
 ---BufWriteCmd handler for flagged buffers: encrypt buffer content to disk.
@@ -263,6 +274,18 @@ function M.encrypt_buffer(vault_id, opts)
   end
 end
 
+---Toggle the buffer: decrypt if it holds vault ciphertext, encrypt if it
+---holds plaintext.
+function M.toggle_buffer()
+  local buf = vim.api.nvim_get_current_buf()
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  if detect.buffer_header(lines) then
+    M.decrypt_buffer()
+  else
+    M.encrypt_buffer()
+  end
+end
+
 ---Rekey the vault file backing the current buffer: re-encrypt it with a new
 ---password and optionally a new vault-id label.
 function M.rekey_buffer()
@@ -340,6 +363,14 @@ function M.setup()
       end,
     })
   end
+
+  local km = config.get().keymaps
+  require("neoansible-vault.keymaps").setup(group, km.toggle_buffer, function()
+    M.toggle_buffer()
+  end, "Ansible vault: encrypt/decrypt buffer")
+  require("neoansible-vault.keymaps").setup(group, km.rekey_file, function()
+    M.rekey_buffer()
+  end, "Ansible vault: rekey file")
 end
 
 return M

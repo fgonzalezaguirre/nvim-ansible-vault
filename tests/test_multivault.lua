@@ -7,7 +7,7 @@ local h = require("helpers")
 local tests = {}
 
 local function reset()
-  config.setup({ prompt = false, confirm_default = false })
+  config.setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   password.clear_cache()
   vim.env.ANSIBLE_VAULT_PASSWORD = nil
   vim.env.ANSIBLE_VAULT_PASSWORD_FILE = nil
@@ -171,7 +171,12 @@ end
 function tests.known_ids_aggregates_and_dedupes()
   reset()
   local dir = h.tmpdir()
-  config.setup({ prompt = false, confirm_default = false, vault_ids = { dev = { password = "x" } } })
+  config.setup({
+    prompt = false,
+    confirm_default = false,
+    confirm_decrypt = false,
+    vault_ids = { dev = { password = "x" } },
+  })
   write_ansible_cfg(dir, { "[defaults]", "vault_identity_list = prod@/a, dev@/b, stag@prompt" })
   vim.env.ANSIBLE_VAULT_IDENTITY_LIST = "ops@/c, prod@/d"
   local known = password.known_ids(dir)
@@ -245,7 +250,7 @@ end
 
 function tests.pick_prefers_config_vault_id_silently()
   reset()
-  config.setup({ prompt = false, confirm_default = false, vault_id = "prod" })
+  config.setup({ prompt = false, confirm_default = false, confirm_decrypt = false, vault_id = "prod" })
   local selected, called = "unset", false
   local orig_select = vim.ui.select
   vim.ui.select = function()

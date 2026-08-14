@@ -32,11 +32,11 @@ end
 ---the default (config.vault_id, else unlabeled) plus all known ids and a
 ---"(new id…)" entry. With `confirm_default = false` the default is used
 ---silently and the picker only appears when identities are known.
----@param buf integer
+---@param dir string project directory used for identity discovery
 ---@param cb fun(vault_id: string|nil)
-function M.pick(buf, cb)
+function M.pick_dir(dir, cb)
   local cfg = config.get()
-  local known = M.known(buf)
+  local known = password.known_ids(dir)
   local default_id = (cfg.vault_id and cfg.vault_id ~= "") and cfg.vault_id or nil
 
   if not cfg.confirm_default then
@@ -83,6 +83,13 @@ function M.pick(buf, cb)
       end
     end
   end)
+end
+
+---Buffer convenience wrapper around pick_dir.
+---@param buf integer
+---@param cb fun(vault_id: string|nil)
+function M.pick(buf, cb)
+  M.pick_dir(buffer_dir(buf), cb)
 end
 
 ---Command completion for vault-id arguments.

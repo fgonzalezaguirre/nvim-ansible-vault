@@ -205,4 +205,21 @@ function M.encrypt_string(plaintext, key, cred, vault_id, cb)
   run_secure(cred, vault_id, { "encrypt_string", "--stdin-name", key }, { stdin = plaintext }, cb)
 end
 
+---Encrypt a file in place (plaintext on disk -> vault ciphertext on disk).
+---@param path string
+---@param cred neoansible-vault.Credential
+---@param vault_id string|nil
+---@param cb fun(err: string|nil, stdout: string|nil)
+function M.encrypt_inplace(path, cred, vault_id, cb)
+  run_secure(cred, vault_id, { "encrypt", path }, nil, cb)
+end
+
+---Decrypt a file in place (vault ciphertext on disk -> plaintext on disk).
+---@param path string
+---@param cred neoansible-vault.Credential
+---@param cb fun(err: string|nil, stdout: string|nil)
+function M.decrypt_inplace(path, cred, cb)
+  run_secure(cred, nil, { "decrypt", path }, nil, cb)
+end
+
 return M

@@ -359,7 +359,7 @@ end
 ---opens the edit float (inline) or edits the file (transparent decrypt).
 ---@param opts { backend: string|nil }|nil
 function M.pick_file(opts)
-  local root = (vim.uv or vim.loop).cwd()
+  local root = (opts and opts.root) or (vim.uv or vim.loop).cwd()
   local entries = M.collect_project(root)
   if #entries == 0 then
     notify("no vault secrets found under " .. root, vim.log.levels.WARN)
@@ -438,8 +438,19 @@ function M.setup()
     require("neoansible-vault.keymaps").setup(group, km.find_buffer, function()
       M.pick()
     end, "Ansible vault: find secrets in buffer")
-    require("neoansible-vault.keymaps").setup(group, km.find_project, function()
-      M.pick_file()
+    -- Global on purpose: usable from any buffer, but only fires inside
+    -- ansible projects (guard keeps it harmless elsewhere).
+    require("neoansible-vault.keymaps").setup_global(km.find_project, function()
+      local project = require("neoansible-vault.project")
+      local root = project.root(project.current_dir())
+      if not root then
+        notify(
+          "not an ansible project (no ansible.cfg, group_vars/, host_vars/, playbooks/ or roles/ found)",
+          vim.log.levels.WARN
+        )
+        return
+      end
+      M.pick_file({ root = root })
     end, "Ansible vault: find secrets in project")
   end
 end

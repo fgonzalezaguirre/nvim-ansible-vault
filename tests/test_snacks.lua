@@ -22,7 +22,7 @@ function tests.edit_float_uses_snacks_win()
     print("  (skipped: NEOANSIBLE_VAULT_SNACKS not set)")
     return
   end
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -63,7 +63,7 @@ function tests.snacks_sources_produce_items()
     print("  (skipped: NEOANSIBLE_VAULT_SNACKS not set)")
     return
   end
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false })
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)

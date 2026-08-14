@@ -15,10 +15,18 @@ local M = {}
 
 ---@class neoansible-vault.KeymapsConfig
 ---@field toggle string|nil Encrypt the plaintext under the cursor / decrypt the block under the cursor
----@field find_buffer string|nil Find vault secrets in the current buffer
----@field find_project string|nil Find vault secrets and encrypted files in the project
----@field reveal_secret string|nil Reveal/edit the secret under the cursor (floating editor)
+---@field toggle_buffer string|nil Encrypt the buffer / decrypt the buffer, depending on its state
+---@field edit_secret string|nil Reveal/edit the secret under the cursor (floating editor)
 ---@field reveal_buffer string|nil Reveal/edit all secrets in the buffer in place
+---@field find_buffer string|nil Find vault secrets in the current buffer
+---@field find_project string|nil Find vault secrets and encrypted files in the project (global, guarded by ansible project detection)
+---@field rekey_secret string|nil Rekey the secret under the cursor (new password/vault-id)
+---@field rekey_file string|nil Rekey the vault file with a new password
+---@field group table<string, string>|nil which-key group labels keyed by prefix (nil disables)
+
+---@class neoansible-vault.SnacksConfig
+---@field explorer boolean Add encrypt/decrypt file actions to the snacks explorer
+---@field icons boolean Show a lock icon for vault-encrypted files in snacks pickers
 
 ---@class neoansible-vault.PickerConfig
 ---@field enabled boolean Enable the secret picker
@@ -43,12 +51,14 @@ local M = {}
 ---@field vault_id string|nil Default vault-id label for new encryptions
 ---@field vault_ids table<string, neoansible-vault.VaultIdConfig> Per-vault-id password sources
 ---@field confirm_default boolean Ask which vault-id to use for every new encryption (off = silently use the default)
+---@field confirm_decrypt boolean Ask for authorization before auto-decrypting a vault file on open (off = decrypt immediately)
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field keymap_filetypes string[] Filetypes that get the buffer-local keymaps
 ---@field inline neoansible-vault.InlineConfig
 ---@field picker neoansible-vault.PickerConfig
 ---@field conceal neoansible-vault.ConcealConfig
 ---@field keymaps neoansible-vault.KeymapsConfig
+---@field snacks neoansible-vault.SnacksConfig
 
 ---@type neoansible-vault.Config
 M.defaults = {
@@ -63,6 +73,7 @@ M.defaults = {
   vault_id = nil,
   vault_ids = {},
   confirm_default = true,
+  confirm_decrypt = true,
   auto_decrypt = true,
   keymap_filetypes = { "yaml", "yaml.ansible" },
   inline = {
@@ -84,11 +95,22 @@ M.defaults = {
     enabled = true,
   },
   keymaps = {
-    toggle = "<leader>ve",
-    find_buffer = "<leader>vf",
-    find_project = "<leader>vF",
-    reveal_secret = "<leader>vr",
-    reveal_buffer = "<leader>vR",
+    toggle = "<leader>avv",
+    toggle_buffer = "<leader>avV",
+    edit_secret = "<leader>ave",
+    reveal_buffer = "<leader>avE",
+    find_buffer = "<leader>avf",
+    find_project = "<leader>avF",
+    rekey_secret = "<leader>avk",
+    rekey_file = "<leader>avK",
+    group = {
+      ["<leader>a"] = "ansible",
+      ["<leader>av"] = "vault",
+    },
+  },
+  snacks = {
+    explorer = true,
+    icons = true,
   },
 }
 

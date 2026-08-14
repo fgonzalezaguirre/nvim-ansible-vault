@@ -9,6 +9,8 @@ function M.setup(opts)
   require("neoansible-vault.picker").setup()
   require("neoansible-vault.conceal").setup()
   require("neoansible-vault.reveal").setup()
+  require("neoansible-vault.keymaps").register_group()
+  require("neoansible-vault.snacks").setup()
   return cfg
 end
 
@@ -71,6 +73,12 @@ end
 ---Forget all cached vault passwords.
 function M.clear_password_cache()
   require("neoansible-vault.password").clear_cache()
+end
+
+---which-key spec entries (for lazy.nvim `opts_extend` on which-key's spec).
+---@return table[]
+function M.which_key_spec()
+  return require("neoansible-vault.keymaps").which_key_spec()
 end
 
 ---Statusline component: vault state of a buffer as a short label.

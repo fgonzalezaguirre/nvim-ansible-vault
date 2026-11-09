@@ -418,7 +418,7 @@ end
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
 ---@param vault_id string|nil vault-id label (config.vault_id / picker when nil)
----@param opts { force_prompt: boolean|nil }|nil force_prompt: ask for a one-off password
+---@param opts { force_prompt: boolean|nil, keep_key: boolean|nil }|nil force_prompt: ask for a one-off password; keep_key: don't ask for the variable name when the line already has one
 function M.encrypt_selection(line1, line2, vault_id, opts)
   opts = opts or {}
   local buf = vim.api.nvim_get_current_buf()
@@ -434,16 +434,25 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
   local indent = #(lines[1]:match("^%s*"))
   local plaintext = table.concat(lines, "\n")
   local comment = nil
+  local parsed_key = false
   if #lines == 1 then
     local key, value = lines[1]:match("^%s*([%w_.%-]+):%s*(.-)%s*$")
     if key and value ~= "" then
       default_key = key
+      parsed_key = true
       plaintext, comment = M.parse_scalar(value)
     end
   end
 
   local function with_vault_id(id)
-    vim.ui.input({ prompt = "Variable name: ", default = default_key }, function(key)
+    local function ask_key(cb)
+      if opts.keep_key and parsed_key then
+        cb(default_key)
+      else
+        vim.ui.input({ prompt = "Variable name: ", default = default_key }, cb)
+      end
+    end
+    ask_key(function(key)
       if not key or key == "" then
         return
       end
@@ -541,14 +550,15 @@ function M.rekey()
 end
 
 ---Toggle the cursor line: decrypt the `!vault` block under the cursor, or
----encrypt the plaintext value/line under the cursor.
+---encrypt the plaintext value/line under the cursor. A `key: value` line
+---keeps its key without asking.
 function M.toggle()
   local buf = vim.api.nvim_get_current_buf()
   local row = vim.api.nvim_win_get_cursor(0)[1] - 1
   if region_at(buf, row) then
     M.decrypt_value()
   else
-    M.encrypt_selection(row + 1, row + 1)
+    M.encrypt_selection(row + 1, row + 1, nil, { keep_key = true })
   end
 end
 

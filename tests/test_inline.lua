@@ -363,6 +363,40 @@ function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
   reset()
 end
 
+function tests.toggle_encrypts_a_key_value_line_without_prompts()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+
+  local dir = h.tmpdir()
+  h.write_passfile(dir)
+  local path = dir .. "/vars.yml"
+  h.write_file(path, "api_token: abc123\n")
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+
+  local orig_input, orig_select = vim.ui.input, vim.ui.select
+  local prompts = 0
+  vim.ui.input = function(_, cb)
+    prompts = prompts + 1
+    cb(nil)
+  end
+  vim.ui.select = function(_, _, cb)
+    prompts = prompts + 1
+    cb(nil)
+  end
+  vim.api.nvim_win_set_cursor(0, { 1, 0 })
+  require("neoansible-vault").toggle_inline()
+  local encrypted = h.wait_for(function()
+    return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "api_token: !vault |"
+  end)
+  vim.ui.input, vim.ui.select = orig_input, orig_select
+  h.assert_true(encrypted, "the line was not encrypted")
+  h.assert_eq(prompts, 0, "no prompt when the key, vault-id and password are known")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.encrypt_selection_multiline()
   reset()
   require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })

@@ -245,7 +245,9 @@ to ansible-vault via a 0600 temp file deleted after each call.
                         the cursor (like |:AnsibleVaultDecryptString|), or
                         encrypt the plaintext value/line under the cursor
                         (like |:AnsibleVaultEncryptString| on the current
-                        line).
+                        line). A `key: value` line keeps its key without
+                        asking, so with `confirm_default = false` and a
+                        password source it encrypts with no prompt at all.
 
                                                         *:AnsibleVaultFiles*
 :AnsibleVaultFiles      Search the project for vault secrets: inline `!vault`

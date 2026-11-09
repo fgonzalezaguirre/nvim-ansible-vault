@@ -249,7 +249,9 @@ db_password: !vault |
 
 - One key for both directions: cursor on a `key: value` line → `<leader>avv`
   encrypts the value; cursor on a `!vault` block → `<leader>avv` decrypts it
-  back to plaintext. (Same as `:AnsibleVaultToggle`.)
+  back to plaintext. (Same as `:AnsibleVaultToggle`.) A `key: value` line keeps
+  its key without asking; with `confirm_default = false` and a password source
+  it encrypts with no prompt at all.
 - Cursor anywhere on the block → `<leader>ave` or `:AnsibleVaultEdit` →
   single-line values open in `vim.ui.input` (the snacks.input dialog when
   installed, same as the variable-name prompt) pre-filled with the current

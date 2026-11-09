@@ -470,10 +470,19 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
             return
           end
           local new_lines = M.indent_block(block, indent, indent + 2)
-          if comment and comment ~= "" then
+          local has_comment = comment ~= nil and comment ~= ""
+          if has_comment then
             table.insert(new_lines, 1, (" "):rep(indent) .. "# " .. comment)
           end
           vim.api.nvim_buf_set_lines(buf, line1 - 1, line2, false, new_lines)
+          -- keep the cursor on the key line (the comment went above it), so
+          -- the next toggle acts on the new block
+          if has_comment and vim.api.nvim_get_current_buf() == buf then
+            local cursor = vim.api.nvim_win_get_cursor(0)
+            if cursor[1] == line1 then
+              vim.api.nvim_win_set_cursor(0, { line1 + 1, cursor[2] })
+            end
+          end
           notify(("encrypted %s%s"):format(key, id and (" [vault-id: " .. id .. "]") or ""), vim.log.levels.INFO)
         end)
       end)

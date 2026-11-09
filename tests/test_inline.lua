@@ -338,6 +338,7 @@ function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
   vim.ui.input = function(opts, cb)
     cb(opts.default)
   end
+  vim.api.nvim_win_set_cursor(0, { 2, 2 })
   require("neoansible-vault").encrypt_selection(2, 2)
   h.assert_true(
     h.wait_for(function()
@@ -346,6 +347,7 @@ function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
     "selection was not encrypted"
   )
   vim.ui.input = orig_input
+  h.assert_eq(vim.api.nvim_win_get_cursor(0)[1], 3, "cursor follows the key line below the comment")
 
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   h.assert_eq(lines[2], "  # from BotFather", "comment kept on its own line")

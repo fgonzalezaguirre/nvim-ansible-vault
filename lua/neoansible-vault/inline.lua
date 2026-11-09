@@ -374,6 +374,46 @@ function M.decrypt_value()
   end)
 end
 
+---Parse the value part of a single-line `key: value`: the scalar a YAML
+---parser would read (quotes removed, escapes resolved) and the trailing
+---comment, which must not end up inside the ciphertext.
+---@param raw string text after `key:`, trimmed
+---@return string value, string|nil comment
+function M.parse_scalar(raw)
+  local quote = raw:sub(1, 1)
+  if quote == '"' or quote == "'" then
+    local out, i = {}, 2
+    while i <= #raw do
+      local c = raw:sub(i, i)
+      if quote == '"' and c == "\\" then
+        local n = raw:sub(i + 1, i + 1)
+        local escapes = { n = "\n", t = "\t", ["0"] = "\0" }
+        table.insert(out, escapes[n] or n)
+        i = i + 2
+      elseif quote == "'" and c == "'" and raw:sub(i + 1, i + 1) == "'" then
+        table.insert(out, "'")
+        i = i + 2
+      elseif c == quote then
+        local rest = raw:sub(i + 1)
+        local comment = rest:match("^%s+#%s?(.*)$")
+        if comment or rest:match("^%s*$") then
+          return table.concat(out), comment
+        end
+        return raw, nil -- text after the closing quote: not a plain quoted scalar
+      else
+        table.insert(out, c)
+        i = i + 1
+      end
+    end
+    return raw, nil -- unterminated quote: leave the text alone
+  end
+  local value, comment = raw:match("^(.-)%s+#%s?(.*)$")
+  if value and value ~= "" then
+    return value, comment
+  end
+  return raw, nil
+end
+
 ---Encrypt a range of lines into a `key: !vault |` block.
 ---@param line1 integer 1-indexed first line
 ---@param line2 integer 1-indexed last line
@@ -388,15 +428,17 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
   end
 
   -- If the selection is a single `key: value` line, default to that key and
-  -- encrypt only the value.
+  -- encrypt only the value: what YAML reads, without quotes or a trailing
+  -- comment (the comment moves to its own line above the block).
   local default_key = "secret"
   local indent = #(lines[1]:match("^%s*"))
   local plaintext = table.concat(lines, "\n")
+  local comment = nil
   if #lines == 1 then
     local key, value = lines[1]:match("^%s*([%w_.%-]+):%s*(.-)%s*$")
     if key and value ~= "" then
       default_key = key
-      plaintext = value
+      plaintext, comment = M.parse_scalar(value)
     end
   end
 
@@ -419,6 +461,9 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
             return
           end
           local new_lines = M.indent_block(block, indent, indent + 2)
+          if comment and comment ~= "" then
+            table.insert(new_lines, 1, (" "):rep(indent) .. "# " .. comment)
+          end
           vim.api.nvim_buf_set_lines(buf, line1 - 1, line2, false, new_lines)
           notify(("encrypted %s%s"):format(key, id and (" [vault-id: " .. id .. "]") or ""), vim.log.levels.INFO)
         end)

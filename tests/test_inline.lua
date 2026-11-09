@@ -303,6 +303,66 @@ function tests.encrypt_selection_single_key_line()
   reset()
 end
 
+function tests.parse_scalar_reads_what_yaml_reads()
+  local inline = require("neoansible-vault.inline")
+  local cases = {
+    { "abc123", "abc123", nil },
+    { "abc123   # the token", "abc123", "the token" },
+    { '"123456:quoted"', "123456:quoted", nil },
+    { '"123456:quoted"   # from BotFather', "123456:quoted", "from BotFather" },
+    { [["say \"hi\" # not a comment"]], 'say "hi" # not a comment', nil },
+    { "'it''s # fine'", "it's # fine", nil },
+    { "pass#word", "pass#word", nil },
+    { '"unterminated', '"unterminated', nil },
+    { '"a" b', '"a" b', nil },
+  }
+  for _, case in ipairs(cases) do
+    local value, comment = inline.parse_scalar(case[1])
+    h.assert_eq(value, case[2], "value of " .. case[1])
+    h.assert_eq(comment, case[3], "comment of " .. case[1])
+  end
+end
+
+function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
+  reset()
+  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+
+  local dir = h.tmpdir()
+  local passfile = h.write_passfile(dir)
+  local path = dir .. "/vars.yml"
+  h.write_file(path, 'channel:\n  token: "123456:quoted-token"   # from BotFather\n')
+  vim.cmd.edit(vim.fn.fnameescape(path))
+  local buf = vim.api.nvim_get_current_buf()
+
+  local orig_input = vim.ui.input
+  vim.ui.input = function(opts, cb)
+    cb(opts.default)
+  end
+  require("neoansible-vault").encrypt_selection(2, 2)
+  h.assert_true(
+    h.wait_for(function()
+      return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n"):match("!vault") ~= nil
+    end),
+    "selection was not encrypted"
+  )
+  vim.ui.input = orig_input
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  h.assert_eq(lines[2], "  # from BotFather", "comment kept on its own line")
+  h.assert_eq(lines[3], "  token: !vault |")
+  local region = detect.inline_region_at(lines, 2)
+  h.assert_true(region ~= nil)
+
+  local blob_path = dir .. "/blob.txt"
+  h.write_file(blob_path, detect.region_blob_text(region))
+  local code, out = h.sys({ "ansible-vault", "decrypt", "--vault-password-file", passfile, "--output", "-", blob_path })
+  h.assert_eq(code, 0)
+  h.assert_eq(out, "123456:quoted-token", "quotes and comment are not part of the secret")
+
+  vim.cmd.bwipeout({ bang = true })
+  reset()
+end
+
 function tests.encrypt_selection_multiline()
   reset()
   require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })

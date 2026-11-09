@@ -74,7 +74,8 @@ Options ~
   env_password_var      Environment variable holding the password itself.
   env_password_file_var Environment variable holding a password file path.
   password_file_name    File name(s) discovered walking up from the edited
-                        file. Default: { ".vault-password", ".vault_pass" }.
+                        file. Default: { ".vault-password", ".vault_pass",
+                        ".vault-pass" }.
   dotenv_name           Dotenv file name discovered the same way.
   prompt                Prompt interactively when nothing else resolves.
   cache_ttl             Seconds prompted passwords are cached (0 disables).
@@ -155,7 +156,8 @@ applies (mirroring ansible, which tries every available secret):
   7. `vault_password_file` from ansible.cfg
   8. `.env` files walking up from the file's directory
      (ANSIBLE_VAULT_PASSWORD or ANSIBLE_VAULT_PASSWORD_FILE)
-  9. `.vault-password` / `.vault_pass` files walking up the same way
+  9. `.vault-password` / `.vault_pass` / `.vault-pass` files walking up the
+     same way
   10. Interactive prompt
 
 Identity list entries look like `prod@~/.vault-pass-prod`, `dev@script.sh`,

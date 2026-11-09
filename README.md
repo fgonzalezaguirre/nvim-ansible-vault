@@ -97,7 +97,7 @@ require("neoansible-vault").setup({
   password_file = nil,          -- explicit password file or executable script
   env_password_var = "ANSIBLE_VAULT_PASSWORD",
   env_password_file_var = "ANSIBLE_VAULT_PASSWORD_FILE",
-  password_file_name = { ".vault-password", ".vault_pass" }, -- discovered walking up
+  password_file_name = { ".vault-password", ".vault_pass", ".vault-pass" }, -- discovered walking up
   dotenv_name = ".env",                   -- discovered walking up from the file
   prompt = true,                -- interactive fallback
   cache_ttl = 900,              -- seconds to cache *prompted* passwords (0 = off)
@@ -168,7 +168,7 @@ applies (mirroring ansible, which tries every available secret):
    `ANSIBLE_VAULT_PASSWORD=...` or `ANSIBLE_VAULT_PASSWORD_FILE=...`
    (relative paths resolve against the `.env` location; `export` and quotes
    are handled)
-9. `.vault-password` / `.vault_pass` files, discovered walking up the same way
+9. `.vault-password` / `.vault_pass` / `.vault-pass` files, discovered walking up the same way
 10. Interactive prompt via `vim.ui.input({ secret = true })`
 
 The upward search never reads from your home directory. Prompted passwords

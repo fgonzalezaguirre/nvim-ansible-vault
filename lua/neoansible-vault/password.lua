@@ -11,7 +11,7 @@
 ---  7. `vault_password_file` from ansible.cfg ($ANSIBLE_CONFIG or discovered)
 ---  8. `.env` files discovered walking up from the edited file
 ---     (`ANSIBLE_VAULT_PASSWORD=...` or `ANSIBLE_VAULT_PASSWORD_FILE=...`)
----  9. `.vault-password` / `.vault_pass` files discovered walking up
+---  9. `.vault-password` / `.vault_pass` / `.vault-pass` files discovered walking up
 --- 10. Interactive prompt (when `prompt = true`)
 ---
 ---The upward search never considers the user's home directory.
@@ -370,7 +370,7 @@ local function resolve_static(start_dir, vault_id)
     return dotenv_cred, nil, false
   end
 
-  -- password file discovery (.vault-password, .vault_pass, ...)
+  -- password file discovery (.vault-password, .vault_pass, .vault-pass, ...)
   local discovered = walk_up(start_dir, function(dir)
     for _, name in ipairs(as_list(cfg.password_file_name)) do
       local path = dir .. "/" .. name

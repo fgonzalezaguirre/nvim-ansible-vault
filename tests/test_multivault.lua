@@ -200,6 +200,18 @@ function tests.vault_pass_alternate_discovery()
   reset()
 end
 
+function tests.vault_dash_pass_discovery()
+  reset()
+  local dir = h.tmpdir()
+  vim.fn.mkdir(dir .. "/sub", "p")
+  h.write_file(dir .. "/.vault-pass", h.PASSWORD .. "\n")
+  vim.uv.fs_chmod(dir .. "/.vault-pass", 384)
+  local cred = resolve(dir .. "/sub")
+  h.assert_eq(cred.kind, "file")
+  h.assert_eq(cred.value, dir .. "/.vault-pass", ".vault-pass discovered")
+  reset()
+end
+
 function tests.vault_password_takes_precedence_over_vault_pass()
   reset()
   local dir = h.tmpdir()

@@ -70,8 +70,10 @@ function M.refresh(buf)
       virt_text_pos = "eol",
     })
     if region.end_row > region.start_row + 1 then
+      -- conceal_lines hides rows start..end_row *inclusive*, while
+      -- region.end_row is exclusive: stop at the last blob line.
       vim.api.nvim_buf_set_extmark(buf, ns, region.start_row + 1, 0, {
-        end_row = region.end_row,
+        end_row = region.end_row - 1,
         conceal_lines = "",
       })
     end

@@ -49,7 +49,7 @@
       (opening a vault file asks "Decrypt <file>?" first; "keep encrypted"
       leaves ciphertext untouched; set to false to decrypt immediately)
 - [x] statusline component
-      (`require("neoansible-vault").status()` → `[vault]` / `[vault:<id>]`)
+      (`require("ansible-vault").status()` → `[vault]` / `[vault:<id>]`)
 - [x] lazy.nvim integration
       (lazy-loading spec in README/install.sh, zero-config bootstrap works
       when loaded after startup)

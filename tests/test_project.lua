@@ -1,7 +1,7 @@
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local password = require("neoansible-vault.password")
-local project = require("neoansible-vault.project")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local password = require("ansible-vault.password")
+local project = require("ansible-vault.project")
 local h = require("helpers")
 
 local tests = {}
@@ -88,7 +88,7 @@ function tests.snacks_explorer_actions_and_icons()
   end
   vim.opt.runtimepath:prepend(SNACKS_DIR)
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local Snacks = require("snacks")
   local explorer = Snacks.config.picker.sources.explorer
@@ -122,7 +122,7 @@ function tests.snacks_integration_disabled_when_config_off()
   end
   reset()
   -- fresh config: opts out of explorer actions
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     prompt = false,
     confirm_default = false,
     confirm_decrypt = false,

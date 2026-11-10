@@ -3,17 +3,17 @@
 ---The vault block under the cursor is decrypted into a floating scratch
 ---buffer. Writing the float (`:w` or `<CR>`) re-encrypts the content with
 ---`ansible-vault encrypt_string` and replaces the original block in place.
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
-local password = require("neoansible-vault.password")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
+local password = require("ansible-vault.password")
 
 local M = {}
 
 local group = nil
 
 local function notify(msg, level)
-  vim.notify(msg, level, { title = "neoansible-vault" })
+  vim.notify(msg, level, { title = "ansible-vault" })
 end
 
 local function notify_err(msg)
@@ -61,24 +61,24 @@ end
 ---Window-local highlight mapping for the edit float.
 local WINHL = table.concat({
   "Normal:NormalFloat",
-  "FloatBorder:NeoAnsibleVaultBorder",
-  "FloatTitle:NeoAnsibleVaultTitle",
-  "FloatFooter:NeoAnsibleVaultFooter",
+  "FloatBorder:AnsibleVaultBorder",
+  "FloatTitle:AnsibleVaultTitle",
+  "FloatFooter:AnsibleVaultFooter",
 }, ",")
 
 ---Define the plugin's default highlight groups. `default = true` keeps them
 ---colorscheme/user-overridable; re-applying on every float also restores
 ---them after a colorscheme change.
 local function apply_highlights()
-  vim.api.nvim_set_hl(0, "NeoAnsibleVaultTitle", { link = "Title", default = true })
-  vim.api.nvim_set_hl(0, "NeoAnsibleVaultFooter", { link = "Special", default = true })
-  vim.api.nvim_set_hl(0, "NeoAnsibleVaultBorder", { link = "FloatBorder", default = true })
+  vim.api.nvim_set_hl(0, "AnsibleVaultTitle", { link = "Title", default = true })
+  vim.api.nvim_set_hl(0, "AnsibleVaultFooter", { link = "Special", default = true })
+  vim.api.nvim_set_hl(0, "AnsibleVaultBorder", { link = "FloatBorder", default = true })
 end
 
 ---Re-encrypt `plain` back into the source buffer's region.
 ---@param src_buf integer
----@param region neoansible-vault.InlineRegion
----@param cred neoansible-vault.Credential
+---@param region ansible-vault.InlineRegion
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil
 ---@param plain string
 ---@param on_success fun()|nil
@@ -103,9 +103,9 @@ end
 
 ---Open the decrypted secret in a floating window.
 ---@param src_buf integer
----@param region neoansible-vault.InlineRegion
+---@param region ansible-vault.InlineRegion
 ---@param plaintext string
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil
 local function open_float(src_buf, region, plaintext, cred, vault_id)
   local cfg = config.get().inline.float
@@ -207,7 +207,7 @@ local function open_float(src_buf, region, plaintext, cred, vault_id)
   vim.api.nvim_create_autocmd("BufWriteCmd", {
     group = group,
     buffer = fbuf,
-    desc = "neoansible-vault: re-encrypt inline secret",
+    desc = "ansible-vault: re-encrypt inline secret",
     callback = save,
   })
   if not sw then
@@ -220,7 +220,7 @@ end
 ---Find the vault region under the cursor, honoring the treesitter option.
 ---@param buf integer
 ---@param row integer 0-indexed row
----@return neoansible-vault.InlineRegion|nil
+---@return ansible-vault.InlineRegion|nil
 local function region_at(buf, row)
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   if config.get().inline.treesitter then
@@ -492,7 +492,7 @@ function M.encrypt_selection(line1, line2, vault_id, opts)
   if vault_id then
     with_vault_id(vault_id)
   else
-    require("neoansible-vault.ids").pick(buf, with_vault_id)
+    require("ansible-vault.ids").pick(buf, with_vault_id)
   end
 end
 
@@ -576,18 +576,18 @@ function M.setup()
   if group then
     return
   end
-  group = vim.api.nvim_create_augroup("neoansible_vault_inline", { clear = true })
+  group = vim.api.nvim_create_augroup("ansible_vault_inline", { clear = true })
 
   local cfg = config.get().inline
   if cfg.enabled then
     local km = config.get().keymaps
-    require("neoansible-vault.keymaps").setup(group, km.toggle, function()
+    require("ansible-vault.keymaps").setup(group, km.toggle, function()
       M.toggle()
     end, "Ansible vault: encrypt/decrypt under cursor")
-    require("neoansible-vault.keymaps").setup(group, km.edit_secret, function()
+    require("ansible-vault.keymaps").setup(group, km.edit_secret, function()
       M.edit()
     end, "Ansible vault: reveal/edit secret under cursor")
-    require("neoansible-vault.keymaps").setup(group, km.rekey_secret, function()
+    require("ansible-vault.keymaps").setup(group, km.rekey_secret, function()
       M.rekey()
     end, "Ansible vault: rekey secret under cursor")
   end

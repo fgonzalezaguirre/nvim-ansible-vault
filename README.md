@@ -1,4 +1,4 @@
-# neoansible-vault
+# nvim-ansible-vault
 
 Ansible vault integration for Neovim: transparent editing of vault-encrypted
 files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
@@ -54,10 +54,10 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
 ```
 
 With lazy.nvim (including LazyVim) the installer writes
-`lua/plugins/neoansible-vault.lua` into your config's plugin import
+`lua/plugins/nvim-ansible-vault.lua` into your config's plugin import
 directory, pointing at this repo via `dir =` — restart nvim or run
 `:Lazy sync` afterwards. Without lazy.nvim it copies into the standard
-package directory (`~/.local/share/nvim/site/pack/neoansible-vault/start/...`),
+package directory (`~/.local/share/nvim/site/pack/nvim-ansible-vault/start/...`),
 which Neovim auto-loads at startup. The installer checks for Neovim >= 0.12
 and `ansible-vault`, generates helptags, and refuses to touch files it did
 not create.
@@ -66,7 +66,7 @@ not create.
 
 ```lua
 {
-  "fgonzalezaguirre/neoansible-vault", -- or: dir = "~/dev/fga/neoansible-vault",
+  "fgonzalezaguirre/nvim-ansible-vault", -- or: dir = "~/dev/fga/nvim-ansible-vault",
   -- load before any file read so vault files decrypt transparently on open
   event = "BufReadPre",
   keys = {
@@ -92,7 +92,7 @@ is loaded lazily after startup.
 Defaults:
 
 ```lua
-require("neoansible-vault").setup({
+require("ansible-vault").setup({
   password = nil,               -- vault password directly (careful!)
   password_file = nil,          -- explicit password file or executable script
   env_password_var = "ANSIBLE_VAULT_PASSWORD",
@@ -299,7 +299,7 @@ LSP hover) take precedence over it.
 ### which-key group names
 
 So the popup shows `ansible` / `vault` instead of `+N keymaps`, the plugin
-exposes `require("neoansible-vault").which_key_spec()`. With lazy.nvim the
+exposes `require("ansible-vault").which_key_spec()`. With lazy.nvim the
 installer already adds this to your spec (contributing to which-key's
 `opts.spec`, assembled before which-key loads — immune to load-order races):
 
@@ -309,7 +309,7 @@ installer already adds this to your spec (contributing to which-key's
   optional = true,
   opts = function(_, opts)
     opts.spec = opts.spec or {}
-    vim.list_extend(opts.spec, require("neoansible-vault").which_key_spec())
+    vim.list_extend(opts.spec, require("ansible-vault").which_key_spec())
   end,
 }
 ```
@@ -353,12 +353,12 @@ Finders auto-detect snacks.nvim, then telescope, then `vim.ui.select`
 
 ```lua
 picker = {
-  sources = require("neoansible-vault.picker").snacks_sources(),
+  sources = require("ansible-vault.picker").snacks_sources(),
 },
 ```
 
-**Telescope extension** — `:Telescope neoansible-vault secrets|files`
-(`require("telescope").load_extension("neoansible-vault")` if not
+**Telescope extension** — `:Telescope ansible-vault secrets|files`
+(`require("telescope").load_extension("ansible-vault")` if not
 auto-loaded).
 
 ## Snacks explorer integration
@@ -395,24 +395,24 @@ override them in your colorscheme or config to restyle the dialog):
 
 | Group | Default link | Used for |
 | --- | --- | --- |
-| `NeoAnsibleVaultTitle` | `Title` | float title (`vault: <key>`) |
-| `NeoAnsibleVaultFooter` | `Special` | footer key hints |
-| `NeoAnsibleVaultBorder` | `FloatBorder` | float border |
+| `AnsibleVaultTitle` | `Title` | float title (`vault: <key>`) |
+| `AnsibleVaultFooter` | `Special` | footer key hints |
+| `AnsibleVaultBorder` | `FloatBorder` | float border |
 
 ```lua
-vim.api.nvim_set_hl(0, "NeoAnsibleVaultTitle", { fg = "#f9e2af", bold = true })
+vim.api.nvim_set_hl(0, "AnsibleVaultTitle", { fg = "#f9e2af", bold = true })
 ```
 
 The float's content gets `filetype=yaml` for basic syntax coloring.
 
 ## Statusline
 
-`require("neoansible-vault").status()` returns `[vault]` or `[vault:<id>]`
+`require("ansible-vault").status()` returns `[vault]` or `[vault:<id>]`
 for vault-related buffers (`""` otherwise) — cached per buffer and safe to
 call on every redraw. With lualine:
 
 ```lua
-sections = { lualine_x = { { require("neoansible-vault").status } } }
+sections = { lualine_x = { { require("ansible-vault").status } } }
 ```
 
 ## Security notes
@@ -436,4 +436,4 @@ make format  # stylua
 Tests are dependency-free: `nvim --headless -l tests/run.lua` drives real
 `ansible-vault` round-trips against fixtures in temp directories.
 
-Run `:checkhealth neoansible-vault` to diagnose your setup.
+Run `:checkhealth ansible-vault` to diagnose your setup.

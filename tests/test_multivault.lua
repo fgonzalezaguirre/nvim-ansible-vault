@@ -1,7 +1,7 @@
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local ids = require("neoansible-vault.ids")
-local password = require("neoansible-vault.password")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local ids = require("ansible-vault.ids")
+local password = require("ansible-vault.password")
 local h = require("helpers")
 
 local tests = {}
@@ -409,7 +409,7 @@ end
 
 function tests.encrypt_bang_uses_one_off_password()
   reset()
-  require("neoansible-vault").setup({})
+  require("ansible-vault").setup({})
   local dir = h.tmpdir()
   h.write_passfile(dir, "file-pass")
   local path = dir .. "/plain.yml"
@@ -514,7 +514,7 @@ end
 
 function tests.encrypt_selection_asks_and_uses_new_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = true })
+  require("ansible-vault").setup({ prompt = false, confirm_default = true })
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
   local path = dir .. "/vars.yml"
@@ -533,7 +533,7 @@ function tests.encrypt_selection_asks_and_uses_new_id()
       cb(opts.default) -- variable name
     end
   end
-  require("neoansible-vault").encrypt_selection(1, 1)
+  require("ansible-vault").encrypt_selection(1, 1)
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
@@ -545,9 +545,9 @@ function tests.encrypt_selection_asks_and_uses_new_id()
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   h.assert_true(lines[2]:match("%$ANSIBLE_VAULT;1%.2;AES256;custom") ~= nil, "labeled with the new id")
 
-  local region = require("neoansible-vault.detect").inline_region_at(lines, 0)
+  local region = require("ansible-vault.detect").inline_region_at(lines, 0)
   local blob_path = dir .. "/blob.txt"
-  h.write_file(blob_path, require("neoansible-vault.detect").region_blob_text(region))
+  h.write_file(blob_path, require("ansible-vault.detect").region_blob_text(region))
   local code, out = h.sys({ "ansible-vault", "decrypt", "--vault-password-file", passfile, "--output", "-", blob_path })
   h.assert_eq(code, 0)
   h.assert_eq(out, "abc123", "encrypted with the default password")

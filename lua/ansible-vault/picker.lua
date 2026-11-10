@@ -1,22 +1,22 @@
 ---Secret picker: list the inline `!vault` secrets of the current buffer in
 ---snacks.nvim, telescope, or a plain vim.ui.select fallback, and jump to or
 ---edit the chosen one.
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
 
 local M = {}
 
 local group = nil
 
 -- defined below with the project-wide picker
----@type fun(e: neoansible-vault.ProjectEntry)
+---@type fun(e: ansible-vault.ProjectEntry)
 local open_entry
 
 local function notify(msg, level)
-  vim.notify(msg, level, { title = "neoansible-vault" })
+  vim.notify(msg, level, { title = "ansible-vault" })
 end
 
----@class neoansible-vault.PickerEntry
+---@class ansible-vault.PickerEntry
 ---@field key string YAML key name
 ---@field lnum integer 1-indexed line of the `key: !vault |` line
 ---@field vault_id string|nil
@@ -24,7 +24,7 @@ end
 
 ---Collect the inline vault secrets of a buffer as picker entries.
 ---@param buf integer
----@return neoansible-vault.PickerEntry[]
+---@return ansible-vault.PickerEntry[]
 function M.collect(buf)
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   local regions
@@ -48,16 +48,16 @@ function M.collect(buf)
 end
 
 ---Jump to the chosen entry and open the inline editor on it.
----@param entry neoansible-vault.PickerEntry
+---@param entry ansible-vault.PickerEntry
 local function jump_and_edit(entry)
   vim.api.nvim_win_set_cursor(0, { entry.lnum, 0 })
-  require("neoansible-vault.inline").edit()
+  require("ansible-vault.inline").edit()
 end
 
 ---Build snacks.nvim picker items. `file` and `pos` let the preview pane show
 ---the buffer around the secret's line (without them snacks errors with
 ---"Item has no file").
----@param entries neoansible-vault.PickerEntry[]
+---@param entries ansible-vault.PickerEntry[]
 ---@param bufname string
 ---@return table[]
 function M._snacks_items(entries, bufname)
@@ -66,7 +66,7 @@ function M._snacks_items(entries, bufname)
   end, entries)
 end
 
----@param entries neoansible-vault.PickerEntry[]
+---@param entries ansible-vault.PickerEntry[]
 ---@param bufname string
 ---@return boolean handled
 local function pick_snacks(entries, bufname)
@@ -90,7 +90,7 @@ end
 
 ---Build a telescope entry: `filename` + `lnum` give the default previewer
 ---buffer context around the secret.
----@param e neoansible-vault.PickerEntry
+---@param e ansible-vault.PickerEntry
 ---@param bufname string
 ---@return table
 function M._telescope_entry(e, bufname)
@@ -99,7 +99,7 @@ end
 
 ---Build the snacks picker opts for project-wide entries (inline secrets and
 ---encrypted files).
----@param entries neoansible-vault.ProjectEntry[]
+---@param entries ansible-vault.ProjectEntry[]
 ---@return table
 function M._snacks_files_picker_opts(entries)
   return {
@@ -119,7 +119,7 @@ end
 
 ---Snacks picker sources. Merge into your snacks config to call them as
 ---`:lua Snacks.picker.ansible_vault_secrets()`:
----`opts.picker.sources = require("neoansible-vault.picker").snacks_sources()`
+---`opts.picker.sources = require("ansible-vault.picker").snacks_sources()`
 ---@return table<string, table>
 function M.snacks_sources()
   return {
@@ -156,7 +156,7 @@ function M.snacks_sources()
   }
 end
 
----@param entries neoansible-vault.PickerEntry[]
+---@param entries ansible-vault.PickerEntry[]
 ---@param bufname string
 ---@return boolean handled
 local function pick_telescope(entries, bufname)
@@ -194,7 +194,7 @@ local function pick_telescope(entries, bufname)
   return true
 end
 
----@param entries neoansible-vault.PickerEntry[]
+---@param entries ansible-vault.PickerEntry[]
 local function pick_select(entries)
   vim.ui.select(entries, {
     prompt = "Ansible vault secrets",
@@ -286,7 +286,7 @@ function M.collect_files(root)
   return out
 end
 
----@class neoansible-vault.ProjectEntry
+---@class ansible-vault.ProjectEntry
 ---@field kind "file"|"inline"
 ---@field path string
 ---@field rel string path relative to the scanned root
@@ -298,7 +298,7 @@ end
 ---Recursively collect vault secrets under `root`: whole-file encrypted files
 ---and inline `!vault` blocks in yaml files.
 ---@param root string
----@return neoansible-vault.ProjectEntry[]
+---@return ansible-vault.ProjectEntry[]
 function M.collect_project(root)
   root = vim.fs.normalize(root)
   local out = {}
@@ -344,12 +344,12 @@ function M.collect_project(root)
   return out
 end
 
----@param e neoansible-vault.ProjectEntry
+---@param e ansible-vault.ProjectEntry
 function open_entry(e)
   vim.cmd.edit(vim.fn.fnameescape(e.path))
   if e.kind == "inline" and e.lnum then
     vim.api.nvim_win_set_cursor(0, { e.lnum, 0 })
-    require("neoansible-vault.inline").edit()
+    require("ansible-vault.inline").edit()
   end
   -- whole vault files decrypt transparently on read
 end
@@ -430,18 +430,18 @@ function M.setup()
   if group then
     return
   end
-  group = vim.api.nvim_create_augroup("neoansible_vault_picker", { clear = true })
+  group = vim.api.nvim_create_augroup("ansible_vault_picker", { clear = true })
 
   local cfg = config.get().picker
   if cfg.enabled then
     local km = config.get().keymaps
-    require("neoansible-vault.keymaps").setup(group, km.find_buffer, function()
+    require("ansible-vault.keymaps").setup(group, km.find_buffer, function()
       M.pick()
     end, "Ansible vault: find secrets in buffer")
     -- Global on purpose: usable from any buffer, but only fires inside
     -- ansible projects (guard keeps it harmless elsewhere).
-    require("neoansible-vault.keymaps").setup_global(km.find_project, function()
-      local project = require("neoansible-vault.project")
+    require("ansible-vault.keymaps").setup_global(km.find_project, function()
+      local project = require("ansible-vault.project")
       local root = project.root(project.current_dir())
       if not root then
         notify(

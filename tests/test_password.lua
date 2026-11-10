@@ -1,5 +1,5 @@
-local config = require("neoansible-vault.config")
-local password = require("neoansible-vault.password")
+local config = require("ansible-vault.config")
+local password = require("ansible-vault.password")
 local h = require("helpers")
 
 local tests = {}

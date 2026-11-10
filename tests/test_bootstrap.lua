@@ -10,8 +10,8 @@ function tests.late_load_bootstraps_without_setup()
   h.write_file(
     script,
     [[
-vim.cmd.runtime("plugin/neoansible-vault.lua")
-local ok, autocmds = pcall(vim.api.nvim_get_autocmds, { group = "neoansible_vault" })
+vim.cmd.runtime("plugin/ansible-vault.lua")
+local ok, autocmds = pcall(vim.api.nvim_get_autocmds, { group = "ansible_vault" })
 print(ok and #autocmds > 0 and "bootstrapped" or "missing")
 os.exit(0)
 ]]

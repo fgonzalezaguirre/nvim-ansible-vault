@@ -15,11 +15,11 @@
 --- 10. Interactive prompt (when `prompt = true`)
 ---
 ---The upward search never considers the user's home directory.
-local config = require("neoansible-vault.config")
+local config = require("ansible-vault.config")
 
 local M = {}
 
----@class neoansible-vault.Credential
+---@class ansible-vault.Credential
 ---@field kind "secret"|"file" secret = raw password, file = password file/script path
 ---@field value string password text (kind=secret) or file path (kind=file)
 ---@field source string human-readable origin, for messages and :checkhealth
@@ -92,14 +92,14 @@ end
 
 ---@param value string
 ---@param source string
----@return neoansible-vault.Credential
+---@return ansible-vault.Credential
 local function secret(value, source)
   return { kind = "secret", value = value, source = source }
 end
 
 ---@param path string
 ---@param source string
----@return neoansible-vault.Credential|nil, string|nil error
+---@return ansible-vault.Credential|nil, string|nil error
 local function file(path, source)
   if not is_file(path) then
     return nil, ("vault password file not found: %s (%s)"):format(path, source)
@@ -123,7 +123,7 @@ local function resolve_path(path, base_dir)
   return path
 end
 
----@class neoansible-vault.Identity
+---@class ansible-vault.Identity
 ---@field id string vault-id label
 ---@field kind "secret"|"file"|"prompt" secret = raw password, file = password file/script, prompt = ask interactively
 ---@field value string|nil password (kind=secret) or file path (kind=file)
@@ -131,7 +131,7 @@ end
 
 ---Parse the vault-relevant keys of an ansible.cfg file ([defaults] section).
 ---@param path string
----@return { vault_password_file: string|nil, identities: neoansible-vault.Identity[] }
+---@return { vault_password_file: string|nil, identities: ansible-vault.Identity[] }
 local function parse_ansible_cfg(path)
   local result = { vault_password_file = nil, identities = {} }
   local fd = io.open(path, "r")
@@ -185,7 +185,7 @@ end
 ---$ANSIBLE_VAULT_IDENTITY_LIST.
 ---@param value string
 ---@param origin string
----@return neoansible-vault.Identity[]
+---@return ansible-vault.Identity[]
 local function parse_identity_list(value, origin)
   local identities = {}
   for entry in value:gmatch("[^,]+") do
@@ -223,7 +223,7 @@ end
 ---All known vault identities for a directory: setup() vault_ids first, then
 ---ansible.cfg vault_identity_list, then $ANSIBLE_VAULT_IDENTITY_LIST.
 ---@param start_dir string
----@return neoansible-vault.Identity[]
+---@return ansible-vault.Identity[]
 local function identities_for(start_dir)
   local cfg = config.get()
   local identities = {}
@@ -270,7 +270,7 @@ end
 
 ---@param start_dir string
 ---@param vault_id string
----@return neoansible-vault.Identity|nil
+---@return ansible-vault.Identity|nil
 local function identity_for(start_dir, vault_id)
   for _, identity in ipairs(identities_for(start_dir)) do
     if identity.id == vault_id then
@@ -292,7 +292,7 @@ end
 ---Synchronous resolution steps (everything except the interactive prompt).
 ---@param start_dir string directory of the file being edited
 ---@param vault_id string|nil vault-id the credential is needed for
----@return neoansible-vault.Credential|nil, string|nil error, boolean wants_prompt
+---@return ansible-vault.Credential|nil, string|nil error, boolean wants_prompt
 local function resolve_static(start_dir, vault_id)
   local cfg = config.get()
 
@@ -390,7 +390,7 @@ end
 ---Find a fresh cached prompt entry covering `start_dir` (longest prefix wins).
 ---@param start_dir string
 ---@param vault_id string|nil
----@return neoansible-vault.Credential|nil
+---@return ansible-vault.Credential|nil
 local function cache_lookup(start_dir, vault_id)
   local cfg = config.get()
   if cfg.cache_ttl <= 0 then
@@ -413,7 +413,7 @@ end
 
 ---@param start_dir string
 ---@param vault_id string|nil
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param replace boolean|nil drop existing entries for this dir+id first
 local function cache_store(start_dir, vault_id, cred, replace)
   if replace then
@@ -434,7 +434,7 @@ end
 ---`opts.force_prompt` skips all static sources and the cache and asks for a
 ---one-off password, which then replaces any cached entry for this dir+id.
 ---@param opts { start_dir: string, vault_id: string|nil, allow_prompt: boolean|nil, force_prompt: boolean|nil }
----@param cb fun(cred: neoansible-vault.Credential|nil, err: string|nil)
+---@param cb fun(cred: ansible-vault.Credential|nil, err: string|nil)
 function M.get(opts, cb)
   local cfg = config.get()
   local err, wants_prompt = nil, false

@@ -2,15 +2,15 @@
 ---(conceal_lines extmarks) and the key line gets a lock marker, so files with
 ---many secrets stay readable. 'conceallevel' is raised per window while it
 ---shows a concealed buffer and restored afterwards.
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
 
 local M = {}
 
 local group = nil
-local ns = vim.api.nvim_create_namespace("neoansible_vault_conceal")
-local STATE_VAR = "neoansible_vault_conceal"
-local WIN_VAR = "neoansible_vault_conceallevel"
+local ns = vim.api.nvim_create_namespace("ansible_vault_conceal")
+local STATE_VAR = "ansible_vault_conceal"
+local WIN_VAR = "ansible_vault_conceallevel"
 
 ---@param buf integer
 ---@return boolean
@@ -90,12 +90,12 @@ function M.setup()
   if group then
     return
   end
-  group = vim.api.nvim_create_augroup("neoansible_vault_conceal", { clear = true })
+  group = vim.api.nvim_create_augroup("ansible_vault_conceal", { clear = true })
 
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "TextChanged", "TextChangedI" }, {
     group = group,
     pattern = "*",
-    desc = "neoansible-vault: conceal !vault blobs",
+    desc = "ansible-vault: conceal !vault blobs",
     callback = function(ev)
       M.refresh(ev.buf)
     end,
@@ -104,7 +104,7 @@ function M.setup()
   vim.api.nvim_create_autocmd({ "BufWinEnter", "BufWinLeave" }, {
     group = group,
     pattern = "*",
-    desc = "neoansible-vault: sync conceallevel for vault buffers",
+    desc = "ansible-vault: sync conceallevel for vault buffers",
     callback = function(ev)
       sync_windows(ev.buf)
     end,

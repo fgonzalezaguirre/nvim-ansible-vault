@@ -6,11 +6,11 @@
 ---  * icons = true: shows a lock icon for vault-encrypted files in all
 ---    snacks pickers (the explorer included), detected by file content,
 ---    cached per mtime.
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
-local ids = require("neoansible-vault.ids")
-local password = require("neoansible-vault.password")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
+local ids = require("ansible-vault.ids")
+local password = require("ansible-vault.password")
 
 local M = {}
 
@@ -18,7 +18,7 @@ local ICON = "󰌆 "
 local ICON_HL = "Special"
 
 local function notify(msg, level)
-  vim.notify(msg, level, { title = "neoansible-vault" })
+  vim.notify(msg, level, { title = "ansible-vault" })
 end
 
 -- path -> { mtime = integer|nil, encrypted = boolean }

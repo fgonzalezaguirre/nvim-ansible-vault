@@ -1,19 +1,19 @@
----Configuration handling for neoansible-vault.
+---Configuration handling for ansible-vault.
 local M = {}
 
----@class neoansible-vault.FloatConfig
+---@class ansible-vault.FloatConfig
 ---@field max_width number Maximum float width as a fraction of the editor (0-1)
 ---@field max_height number Maximum float height as a fraction of the editor (0-1)
 ---@field border string Border style passed to nvim_open_win()
 
----@class neoansible-vault.InlineConfig
+---@class ansible-vault.InlineConfig
 ---@field enabled boolean Enable inline `!vault` editing
 ---@field editor "auto"|"input"|"float" Value editor: "auto" uses vim.ui.input for single-line values, the float otherwise
 ---@field treesitter boolean Use tree-sitter (YAML parser) to reject false-positive matches when available
 ---@field hover boolean Map K to a decrypted hover preview on vault blocks (falls back to default K)
----@field float neoansible-vault.FloatConfig
+---@field float ansible-vault.FloatConfig
 
----@class neoansible-vault.KeymapsConfig
+---@class ansible-vault.KeymapsConfig
 ---@field toggle string|nil Encrypt the plaintext under the cursor / decrypt the block under the cursor
 ---@field toggle_buffer string|nil Encrypt the buffer / decrypt the buffer, depending on its state
 ---@field edit_secret string|nil Reveal/edit the secret under the cursor (floating editor)
@@ -24,22 +24,22 @@ local M = {}
 ---@field rekey_file string|nil Rekey the vault file with a new password
 ---@field group table<string, string>|nil which-key group labels keyed by prefix (nil disables)
 
----@class neoansible-vault.SnacksConfig
+---@class ansible-vault.SnacksConfig
 ---@field explorer boolean Add encrypt/decrypt file actions to the snacks explorer
 ---@field icons boolean Show a lock icon for vault-encrypted files in snacks pickers
 
----@class neoansible-vault.PickerConfig
+---@class ansible-vault.PickerConfig
 ---@field enabled boolean Enable the secret picker
 ---@field backend "auto"|"snacks"|"telescope"|"select" Picker backend (auto tries snacks, then telescope, then vim.ui.select)
 
----@class neoansible-vault.ConcealConfig
+---@class ansible-vault.ConcealConfig
 ---@field enabled boolean Conceal the hex body of inline `!vault` blocks
 
----@class neoansible-vault.VaultIdConfig
+---@class ansible-vault.VaultIdConfig
 ---@field password string|nil Password for this vault-id, set directly (use with care)
 ---@field password_file string|nil Password file or executable script for this vault-id
 
----@class neoansible-vault.Config
+---@class ansible-vault.Config
 ---@field password string|nil Vault password set directly in config (use with care)
 ---@field password_file string|nil Explicit path to a vault password file or executable script
 ---@field env_password_var string Environment variable holding the password directly
@@ -49,18 +49,18 @@ local M = {}
 ---@field prompt boolean Prompt for the password when no other source resolves
 ---@field cache_ttl integer Seconds to cache resolved passwords in memory (0 disables)
 ---@field vault_id string|nil Default vault-id label for new encryptions
----@field vault_ids table<string, neoansible-vault.VaultIdConfig> Per-vault-id password sources
+---@field vault_ids table<string, ansible-vault.VaultIdConfig> Per-vault-id password sources
 ---@field confirm_default boolean Ask which vault-id to use for every new encryption (off = silently use the default)
 ---@field confirm_decrypt boolean Ask for authorization before auto-decrypting a vault file on open (off = decrypt immediately)
 ---@field auto_decrypt boolean Transparently decrypt whole-file vault files on read
 ---@field keymap_filetypes string[] Filetypes that get the buffer-local keymaps
----@field inline neoansible-vault.InlineConfig
----@field picker neoansible-vault.PickerConfig
----@field conceal neoansible-vault.ConcealConfig
----@field keymaps neoansible-vault.KeymapsConfig
----@field snacks neoansible-vault.SnacksConfig
+---@field inline ansible-vault.InlineConfig
+---@field picker ansible-vault.PickerConfig
+---@field conceal ansible-vault.ConcealConfig
+---@field keymaps ansible-vault.KeymapsConfig
+---@field snacks ansible-vault.SnacksConfig
 
----@type neoansible-vault.Config
+---@type ansible-vault.Config
 M.defaults = {
   password = nil,
   password_file = nil,
@@ -114,13 +114,13 @@ M.defaults = {
   },
 }
 
----@type neoansible-vault.Config
+---@type ansible-vault.Config
 M.options = vim.deepcopy(M.defaults)
 
 M._did_setup = false
 
----@param opts neoansible-vault.Config|nil
----@return neoansible-vault.Config
+---@param opts ansible-vault.Config|nil
+---@return ansible-vault.Config
 function M.setup(opts)
   opts = opts or {}
   vim.validate({ opts = { opts, "table" } })
@@ -129,7 +129,7 @@ function M.setup(opts)
   return M.options
 end
 
----@return neoansible-vault.Config
+---@return ansible-vault.Config
 function M.get()
   return M.options
 end

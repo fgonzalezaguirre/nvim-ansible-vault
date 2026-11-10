@@ -46,7 +46,7 @@ local TAG_PAT = "^(%s*)(.-):%s*!vault%s*|%s*$"
 local HEX_PAT = "^%s*[0-9a-fA-F]+%s*$"
 local HEADER_PAT = "^%s*%$ANSIBLE_VAULT;"
 
----@class neoansible-vault.InlineRegion
+---@class ansible-vault.InlineRegion
 ---@field start_row integer 0-indexed row of the `key: !vault |` line
 ---@field end_row integer 0-indexed row one past the last blob line (exclusive)
 ---@field key string YAML key name
@@ -56,7 +56,7 @@ local HEADER_PAT = "^%s*%$ANSIBLE_VAULT;"
 
 ---Find all inline `!vault` regions in a list of lines.
 ---@param lines string[]
----@return neoansible-vault.InlineRegion[]
+---@return ansible-vault.InlineRegion[]
 function M.find_inline_regions(lines)
   local regions = {}
   local i = 1
@@ -107,7 +107,7 @@ end
 ---Find the inline vault region containing the given row, if any.
 ---@param lines string[]
 ---@param row integer 0-indexed row
----@return neoansible-vault.InlineRegion|nil
+---@return ansible-vault.InlineRegion|nil
 function M.inline_region_at(lines, row)
   for _, region in ipairs(M.find_inline_regions(lines)) do
     if row >= region.start_row and row < region.end_row then
@@ -150,7 +150,7 @@ end
 ---Falls back to pure line-based detection otherwise.
 ---@param buf integer
 ---@param lines string[]
----@return neoansible-vault.InlineRegion[]
+---@return ansible-vault.InlineRegion[]
 function M.find_inline_regions_ts(buf, lines)
   local regions = M.find_inline_regions(lines)
   local tag_rows = M.ts_vault_rows(buf)
@@ -170,7 +170,7 @@ end
 ---@param buf integer
 ---@param lines string[]
 ---@param row integer 0-indexed row
----@return neoansible-vault.InlineRegion|nil
+---@return ansible-vault.InlineRegion|nil
 function M.inline_region_at_ts(buf, lines, row)
   for _, region in ipairs(M.find_inline_regions_ts(buf, lines)) do
     if row >= region.start_row and row < region.end_row then
@@ -181,7 +181,7 @@ function M.inline_region_at_ts(buf, lines, row)
 end
 
 ---Extract the bare vault blob (header + hex, indentation stripped) from a region.
----@param region neoansible-vault.InlineRegion
+---@param region ansible-vault.InlineRegion
 ---@return string
 function M.region_blob_text(region)
   local stripped = {}

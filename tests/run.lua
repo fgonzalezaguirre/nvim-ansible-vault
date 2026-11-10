@@ -12,7 +12,7 @@ vim.cmd("filetype plugin indent on")
 vim.cmd.runtime("ftdetect/ansible.lua")
 
 -- Install the plugin like a user would (commands + auto setup).
-vim.cmd.runtime("plugin/neoansible-vault.lua")
+vim.cmd.runtime("plugin/ansible-vault.lua")
 
 local files = vim.fn.glob(root .. "/tests/test_*.lua", false, true)
 table.sort(files)

@@ -1,4 +1,4 @@
-local picker = require("neoansible-vault.picker")
+local picker = require("ansible-vault.picker")
 local h = require("helpers")
 
 local tests = {}
@@ -82,7 +82,7 @@ function tests.pick_falls_back_to_vim_ui_select()
   vim.cmd.edit(vim.fn.fnameescape(path))
 
   -- Force the vim.ui.select backend and capture the offered items.
-  require("neoansible-vault.config").get().picker.backend = "select"
+  require("ansible-vault.config").get().picker.backend = "select"
   local offered = nil
   local orig_select = vim.ui.select
   vim.ui.select = function(items, _, cb)
@@ -91,7 +91,7 @@ function tests.pick_falls_back_to_vim_ui_select()
   end
   picker.pick()
   vim.ui.select = orig_select
-  require("neoansible-vault.config").get().picker.backend = "auto"
+  require("ansible-vault.config").get().picker.backend = "auto"
 
   h.assert_eq(#offered, 1)
   h.assert_eq(offered[1].key, "db_password")

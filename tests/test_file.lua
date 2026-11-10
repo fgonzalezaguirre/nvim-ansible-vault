@@ -1,5 +1,5 @@
-local config = require("neoansible-vault.config")
-local password = require("neoansible-vault.password")
+local config = require("ansible-vault.config")
+local password = require("ansible-vault.password")
 local h = require("helpers")
 
 local tests = {}
@@ -12,7 +12,7 @@ local function reset()
 end
 
 local function current_state(buf)
-  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault")
+  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "ansible_vault")
   return ok and state or nil
 end
 
@@ -31,7 +31,7 @@ end
 
 function tests.transparent_decrypt_on_open()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -53,7 +53,7 @@ end
 
 function tests.write_reencrypts_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -83,7 +83,7 @@ end
 
 function tests.vault_id_file_roundtrip()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -114,7 +114,7 @@ end
 
 function tests.rekey_changes_password_and_preserves_vault_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -139,7 +139,7 @@ function tests.rekey_changes_password_and_preserves_vault_id()
       cb("") -- keep current vault-id
     end
   end
-  require("neoansible-vault").rekey_buffer()
+  require("ansible-vault").rekey_buffer()
   h.assert_true(
     h.wait_for(function()
       -- the header keeps the 1.2 label, so poll the password change itself
@@ -181,7 +181,7 @@ end
 
 function tests.status_component()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -191,17 +191,17 @@ function tests.status_component()
   h.write_file(plain, "k: v\n")
   vim.cmd.edit(vim.fn.fnameescape(plain))
   local plain_buf = vim.api.nvim_get_current_buf()
-  h.assert_eq(require("neoansible-vault").status(plain_buf), "")
+  h.assert_eq(require("ansible-vault").status(plain_buf), "")
 
   -- encrypted file with vault-id, transparently decrypted: [vault:prod]
   local prod = dir .. "/prod.yml"
   h.write_file(prod, "k: v\n")
   h.vault_encrypt(prod, passfile, "prod")
   local prod_buf = edit_and_wait(prod)
-  h.assert_eq(require("neoansible-vault").status(prod_buf), "[vault:prod]")
+  h.assert_eq(require("ansible-vault").status(prod_buf), "[vault:prod]")
 
   -- encrypted file without id, auto_decrypt off: ciphertext -> [vault]
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     prompt = false,
     confirm_default = false,
     confirm_decrypt = false,
@@ -212,9 +212,9 @@ function tests.status_component()
   h.vault_encrypt(enc, passfile)
   vim.cmd.edit(vim.fn.fnameescape(enc))
   local enc_buf = vim.api.nvim_get_current_buf()
-  h.assert_eq(require("neoansible-vault").status(enc_buf), "[vault]")
+  h.assert_eq(require("ansible-vault").status(enc_buf), "[vault]")
   -- cached value survives repeat calls
-  h.assert_eq(require("neoansible-vault").status(enc_buf), "[vault]")
+  h.assert_eq(require("ansible-vault").status(enc_buf), "[vault]")
 
   vim.cmd.bwipeout({ bang = true })
   vim.cmd.bwipeout({ bang = true })
@@ -224,7 +224,7 @@ end
 
 function tests.non_vault_file_untouched()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   h.write_passfile(dir)
@@ -246,7 +246,7 @@ end
 
 function tests.wrong_password_leaves_ciphertext()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir, "right-password")
@@ -269,7 +269,7 @@ end
 
 function tests.explicit_decrypt_and_encrypt_buffer()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -287,7 +287,7 @@ function tests.explicit_decrypt_and_encrypt_buffer()
   end
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, ciphertext)
 
-  require("neoansible-vault").decrypt_buffer()
+  require("ansible-vault").decrypt_buffer()
   h.assert_true(
     h.wait_for(function()
       return current_state(buf) ~= nil
@@ -296,7 +296,7 @@ function tests.explicit_decrypt_and_encrypt_buffer()
   )
   h.assert_eq(vim.api.nvim_buf_get_lines(buf, 0, -1, false), { "m: 1" })
 
-  require("neoansible-vault").encrypt_buffer()
+  require("ansible-vault").encrypt_buffer()
   h.assert_true(
     h.wait_for(function()
       return current_state(buf) == nil and vim.bo[buf].buftype == ""
@@ -311,7 +311,7 @@ end
 
 function tests.toggle_buffer_dispatches_on_state()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -321,7 +321,7 @@ function tests.toggle_buffer_dispatches_on_state()
   local buf = vim.api.nvim_get_current_buf()
 
   -- plaintext -> toggle encrypts
-  require("neoansible-vault.file").toggle_buffer()
+  require("ansible-vault.file").toggle_buffer()
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("^%$ANSIBLE_VAULT;") ~= nil
@@ -330,7 +330,7 @@ function tests.toggle_buffer_dispatches_on_state()
   )
 
   -- ciphertext -> toggle decrypts (and flags for re-encryption on write)
-  require("neoansible-vault.file").toggle_buffer()
+  require("ansible-vault.file").toggle_buffer()
   h.assert_true(
     h.wait_for(function()
       local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -338,7 +338,7 @@ function tests.toggle_buffer_dispatches_on_state()
     end),
     "ciphertext buffer was not decrypted"
   )
-  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault")
+  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "ansible_vault")
   h.assert_true(ok and state ~= nil, "decrypted buffer is flagged for re-encryption on write")
 
   local fd = assert(io.open(path, "r"))
@@ -351,7 +351,7 @@ end
 
 function tests.auto_decrypt_prompts_and_keeps_ciphertext_on_no()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_decrypt = true })
+  require("ansible-vault").setup({ prompt = false, confirm_decrypt = true })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -388,7 +388,7 @@ end
 
 function tests.auto_decrypt_prompts_and_decrypts_on_yes()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_decrypt = true })
+  require("ansible-vault").setup({ prompt = false, confirm_decrypt = true })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)

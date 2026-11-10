@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installer for neoansible-vault.
+# Installer for ansible-vault.
 #
 # Usage:
 #   ./install.sh              auto-detect: lazy.nvim spec if lazy is used, else pack dir
@@ -14,9 +14,10 @@
 # import directory (e.g. lua/plugins/, see { import = "plugins" }).
 set -euo pipefail
 
-PLUGIN_NAME="neoansible-vault"
-MARKER="plugin/neoansible-vault.lua"
-LAZY_MARKER="neoansible-vault-installer"
+PLUGIN_NAME="nvim-ansible-vault"
+MODULE_NAME="ansible-vault"
+MARKER="plugin/ansible-vault.lua"
+LAZY_MARKER="ansible-vault-installer"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
@@ -193,7 +194,7 @@ return {
     optional = true,
     opts = function(_, opts)
       local ok, spec = pcall(function()
-        return require("$PLUGIN_NAME").which_key_spec()
+        return require("$MODULE_NAME").which_key_spec()
       end)
       if ok and type(spec) == "table" and #spec > 0 then
         opts.spec = opts.spec or {}
@@ -206,7 +207,7 @@ EOF
   log "wrote lazy.nvim spec: $spec_file"
   log ""
   log "$PLUGIN_NAME installed. Restart nvim (or run :Lazy sync) to load it."
-  log "Try:  nvim some-vault-file.yml   (or :checkhealth $PLUGIN_NAME)"
+  log "Try:  nvim some-vault-file.yml   (or :checkhealth $MODULE_NAME)"
 }
 
 do_uninstall_lazy() {
@@ -229,7 +230,7 @@ do_uninstall_lazy() {
 
 # --- pack (vim packages) --------------------------------------------------------
 
-# is_ours PATH — true if PATH looks like a neoansible-vault install we made.
+# is_ours PATH — true if PATH looks like a ansible-vault install we made.
 is_ours() {
   local path="$1"
   if [ -L "$path" ]; then
@@ -280,7 +281,7 @@ do_install_pack() {
     log "copied plugin files to $TARGET"
   fi
 
-  # generate helptags so :help neoansible-vault works
+  # generate helptags so :help ansible-vault works
   if [ -d "$TARGET/doc" ]; then
     nvim --headless -u NONE -c "silent helptags $TARGET/doc" -c "qa!" 2>/dev/null || true
   fi
@@ -297,7 +298,7 @@ do_install_pack() {
     log " configs that use :help packages)"
   else
     log "$PLUGIN_NAME installed. It loads automatically on the next nvim start."
-    log "Try:  nvim some-vault-file.yml   (or :checkhealth $PLUGIN_NAME)"
+    log "Try:  nvim some-vault-file.yml   (or :checkhealth $MODULE_NAME)"
   fi
 }
 

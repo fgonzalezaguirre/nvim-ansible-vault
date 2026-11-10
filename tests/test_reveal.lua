@@ -1,4 +1,4 @@
-local detect = require("neoansible-vault.detect")
+local detect = require("ansible-vault.detect")
 local h = require("helpers")
 
 local tests = {}
@@ -54,13 +54,13 @@ local function decrypt_block(lines, key, passfile, dir, name)
 end
 
 function tests.reveal_shows_plaintext_and_write_reencrypts()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local buf, dir, passfile = edit_secrets_file()
 
-  require("neoansible-vault").toggle_reveal()
+  require("ansible-vault").toggle_reveal()
   h.assert_true(
     h.wait_for(function()
-      return vim.b[buf].neoansible_vault_reveal ~= nil
+      return vim.b[buf].ansible_vault_reveal ~= nil
     end),
     "reveal did not engage"
   )
@@ -98,14 +98,14 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
   h.assert_true(not has_ciphertext(buf_lines(buf)))
 
   -- toggle off: blocks re-encrypted in the buffer
-  require("neoansible-vault").toggle_reveal()
+  require("ansible-vault").toggle_reveal()
   h.assert_true(
     h.wait_for(function()
       return has_ciphertext(buf_lines(buf))
     end),
     "unreveal did not re-encrypt the buffer"
   )
-  h.assert_eq(vim.b[buf].neoansible_vault_reveal, nil)
+  h.assert_eq(vim.b[buf].ansible_vault_reveal, nil)
   h.assert_eq(vim.bo[buf].buftype, "")
   h.assert_eq(decrypt_block(buf_lines(buf), "db_password", passfile, dir, "buffer"), "n3w-s3cr3t")
 
@@ -113,7 +113,7 @@ function tests.reveal_shows_plaintext_and_write_reencrypts()
 end
 
 function tests.reveal_multiline_roundtrip()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
   local block = h.vault_encrypt_string("line one\nline two", "cert", passfile)
@@ -122,10 +122,10 @@ function tests.reveal_multiline_roundtrip()
   vim.cmd.edit(vim.fn.fnameescape(path))
   local buf = vim.api.nvim_get_current_buf()
 
-  require("neoansible-vault").toggle_reveal()
+  require("ansible-vault").toggle_reveal()
   h.assert_true(
     h.wait_for(function()
-      return vim.b[buf].neoansible_vault_reveal ~= nil
+      return vim.b[buf].ansible_vault_reveal ~= nil
     end),
     "reveal did not engage"
   )
@@ -150,18 +150,18 @@ function tests.reveal_multiline_roundtrip()
 end
 
 function tests.reveal_without_secrets_notifies()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local dir = h.tmpdir()
   local path = dir .. "/plain.yml"
   h.write_file(path, "k: v\n")
   vim.cmd.edit(vim.fn.fnameescape(path))
   local buf = vim.api.nvim_get_current_buf()
 
-  require("neoansible-vault").toggle_reveal()
+  require("ansible-vault").toggle_reveal()
   vim.wait(300, function()
     return false
   end)
-  h.assert_eq(vim.b[buf].neoansible_vault_reveal, nil, "no state for a plain buffer")
+  h.assert_eq(vim.b[buf].ansible_vault_reveal, nil, "no state for a plain buffer")
   h.assert_eq(vim.bo[buf].buftype, "")
 
   vim.cmd.bwipeout({ bang = true })

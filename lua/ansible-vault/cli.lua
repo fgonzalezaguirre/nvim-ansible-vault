@@ -15,7 +15,7 @@ end
 ---@return string|nil path, fun()|nil cleanup, string|nil err
 local function secret_tempfile(value)
   local uv = vim.uv or vim.loop
-  local fd, path = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-XXXXXX")
+  local fd, path = uv.fs_mkstemp(uv.os_tmpdir() .. "/ansible-vault-XXXXXX")
   if not fd then
     return nil, nil, "failed to create temp file for vault password"
   end
@@ -64,7 +64,7 @@ end
 
 ---Run with a credential, managing a temp password file when the credential
 ---is a raw secret. The temp file is always removed afterwards.
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil
 ---@param sub string[]
 ---@param opts { stdin: string|nil }|nil
@@ -89,7 +89,7 @@ end
 
 ---Print a vault file to stdout without modifying it.
 ---@param path string
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param cb fun(err: string|nil, stdout: string|nil)
 function M.view(path, cred, cb)
   run_secure(cred, nil, { "view", path }, nil, cb)
@@ -98,7 +98,7 @@ end
 ---Encrypt a plaintext file, writing the ciphertext to `out`.
 ---@param src string plaintext file
 ---@param out string destination path
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil preserve/add this vault-id label
 ---@param cb fun(err: string|nil, stdout: string|nil)
 function M.encrypt_file(src, out, cred, vault_id, cb)
@@ -107,11 +107,11 @@ end
 
 ---Decrypt a vault blob (header + hex body) given as a string.
 ---@param blob string
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param cb fun(err: string|nil, plaintext: string|nil)
 function M.decrypt_blob(blob, cred, cb)
   local uv = vim.uv or vim.loop
-  local fd, path = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-blob-XXXXXX")
+  local fd, path = uv.fs_mkstemp(uv.os_tmpdir() .. "/ansible-vault-blob-XXXXXX")
   if not fd then
     vim.schedule(function()
       cb("failed to create temp file for vault blob", nil)
@@ -128,7 +128,7 @@ end
 
 ---Materialize a credential as a passfile path: file credentials are used
 ---directly, raw secrets go to a 0600 temp file.
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@return string|nil path, fun() cleanup, string|nil err
 local function cred_passfile(cred)
   if cred.kind == "file" then
@@ -142,8 +142,8 @@ end
 ---vault-id label. An existing vault-id label is preserved unless
 ---`opts.new_vault_id` says otherwise (passing no new id would drop the label).
 ---@param path string
----@param old_cred neoansible-vault.Credential
----@param new_cred neoansible-vault.Credential
+---@param old_cred ansible-vault.Credential
+---@param new_cred ansible-vault.Credential
 ---@param opts { vault_id: string|nil, new_vault_id: string|nil }|nil
 ---@param cb fun(err: string|nil)
 function M.rekey(path, old_cred, new_cred, opts, cb)
@@ -198,7 +198,7 @@ end
 ---Encrypt a string, producing a `key: !vault |` block.
 ---@param plaintext string
 ---@param key string variable name
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil
 ---@param cb fun(err: string|nil, block: string|nil)
 function M.encrypt_string(plaintext, key, cred, vault_id, cb)
@@ -207,7 +207,7 @@ end
 
 ---Encrypt a file in place (plaintext on disk -> vault ciphertext on disk).
 ---@param path string
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param vault_id string|nil
 ---@param cb fun(err: string|nil, stdout: string|nil)
 function M.encrypt_inplace(path, cred, vault_id, cb)
@@ -216,7 +216,7 @@ end
 
 ---Decrypt a file in place (vault ciphertext on disk -> plaintext on disk).
 ---@param path string
----@param cred neoansible-vault.Credential
+---@param cred ansible-vault.Credential
 ---@param cb fun(err: string|nil, stdout: string|nil)
 function M.decrypt_inplace(path, cred, cb)
   run_secure(cred, nil, { "decrypt", path }, nil, cb)

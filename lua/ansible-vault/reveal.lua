@@ -5,19 +5,19 @@
 ---buffer to acwrite: every `:w` re-encrypts each secret and writes only
 ---ciphertext to disk, while the buffer keeps the plaintext view. Toggling
 ---off re-encrypts the blocks inside the buffer as well.
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
-local inline = require("neoansible-vault.inline")
-local password = require("neoansible-vault.password")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
+local inline = require("ansible-vault.inline")
+local password = require("ansible-vault.password")
 
 local M = {}
 
 local group = nil
-local STATE_VAR = "neoansible_vault_reveal"
+local STATE_VAR = "ansible_vault_reveal"
 
 local function notify(msg, level)
-  vim.notify(msg, level, { title = "neoansible-vault" })
+  vim.notify(msg, level, { title = "ansible-vault" })
 end
 
 local function notify_err(msg)
@@ -109,8 +109,8 @@ end
 ---Resolve and cache one credential per vault-id.
 ---@param buf integer
 ---@param vault_id string|nil
----@param cache table<string, neoansible-vault.Credential>
----@param cb fun(cred: neoansible-vault.Credential|nil)
+---@param cache table<string, ansible-vault.Credential>
+---@param cb fun(cred: ansible-vault.Credential|nil)
 local function cred_for(buf, vault_id, cache, cb)
   local ck = vault_id or ""
   if cache[ck] then
@@ -309,7 +309,7 @@ local function reveal(buf)
     vim.api.nvim_create_autocmd("BufWriteCmd", {
       group = group,
       buffer = buf,
-      desc = "neoansible-vault: re-encrypt revealed secrets on write",
+      desc = "ansible-vault: re-encrypt revealed secrets on write",
       callback = function()
         M.write(buf)
       end,
@@ -361,11 +361,11 @@ function M.setup()
   if group then
     return
   end
-  group = vim.api.nvim_create_augroup("neoansible_vault_reveal", { clear = true })
+  group = vim.api.nvim_create_augroup("ansible_vault_reveal", { clear = true })
 
   local cfg = config.get().inline
   if cfg.enabled then
-    require("neoansible-vault.keymaps").setup(group, config.get().keymaps.reveal_buffer, function()
+    require("ansible-vault.keymaps").setup(group, config.get().keymaps.reveal_buffer, function()
       M.toggle()
     end, "Ansible vault: reveal/edit all secrets in buffer")
   end

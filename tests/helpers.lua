@@ -36,7 +36,7 @@ function M.write_passfile(dir, password)
   return path
 end
 
----@return neoansible-vault.Credential
+---@return ansible-vault.Credential
 function M.cred(dir)
   return { kind = "file", value = M.write_passfile(dir), source = "test" }
 end

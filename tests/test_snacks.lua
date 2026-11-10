@@ -1,14 +1,14 @@
 ---Smoke tests against a real snacks.nvim checkout. Skipped unless
----NEOANSIBLE_VAULT_SNACKS points at a snacks.nvim repo, e.g.:
----  NEOANSIBLE_VAULT_SNACKS=/path/to/snacks.nvim make test
-local picker = require("neoansible-vault.picker")
+---NVIM_ANSIBLE_VAULT_SNACKS points at a snacks.nvim repo, e.g.:
+---  NVIM_ANSIBLE_VAULT_SNACKS=/path/to/snacks.nvim make test
+local picker = require("ansible-vault.picker")
 local h = require("helpers")
 
 local tests = {}
 
 ---@return boolean available
 local function load_snacks()
-  local dir = vim.env.NEOANSIBLE_VAULT_SNACKS
+  local dir = vim.env.NVIM_ANSIBLE_VAULT_SNACKS
   if not dir or vim.fn.isdirectory(dir) == 0 then
     return false
   end
@@ -19,10 +19,10 @@ end
 
 function tests.edit_float_uses_snacks_win()
   if not load_snacks() then
-    print("  (skipped: NEOANSIBLE_VAULT_SNACKS not set)")
+    print("  (skipped: NVIM_ANSIBLE_VAULT_SNACKS not set)")
     return
   end
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -32,7 +32,7 @@ function tests.edit_float_uses_snacks_win()
   vim.cmd.edit(vim.fn.fnameescape(path))
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
 
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
   local win, fbuf = nil, nil
   h.assert_true(
     h.wait_for(function()
@@ -43,7 +43,7 @@ function tests.edit_float_uses_snacks_win()
   )
   h.assert_eq(vim.api.nvim_buf_get_lines(fbuf, 0, -1, false), { "snacks-secret" })
   h.assert_true(vim.api.nvim_win_get_config(win).relative ~= "", "float is floating")
-  h.assert_true(vim.wo[win].winhighlight:match("NeoAnsibleVaultTitle") ~= nil, "plugin highlight groups applied")
+  h.assert_true(vim.wo[win].winhighlight:match("AnsibleVaultTitle") ~= nil, "plugin highlight groups applied")
 
   -- no extra windows (e.g. a backdrop pane) may be created
   local floats = 0
@@ -60,10 +60,10 @@ end
 
 function tests.snacks_sources_produce_items()
   if not load_snacks() then
-    print("  (skipped: NEOANSIBLE_VAULT_SNACKS not set)")
+    print("  (skipped: NVIM_ANSIBLE_VAULT_SNACKS not set)")
     return
   end
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)

@@ -2,8 +2,8 @@
 ---
 ---Existing encrypted content always keeps its own vault-id label; this
 ---module only decides which id (if any) *new* ciphertext gets.
-local config = require("neoansible-vault.config")
-local password = require("neoansible-vault.password")
+local config = require("ansible-vault.config")
+local password = require("ansible-vault.password")
 
 local M = {}
 

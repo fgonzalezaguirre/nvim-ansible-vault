@@ -1,18 +1,18 @@
-*neoansible-vault.txt*  Ansible vault integration for Neovim
+*ansible-vault.txt*  Ansible vault integration for Neovim
 
 ==============================================================================
-CONTENTS                                          *neoansible-vault-contents*
+CONTENTS                                          *ansible-vault-contents*
 
-  1. Introduction ............ |neoansible-vault-introduction|
-  2. Setup ................... |neoansible-vault-setup|
-  3. Passwords ............... |neoansible-vault-passwords|
-  4. Commands ................ |neoansible-vault-commands|
-  5. Mappings ................ |neoansible-vault-mappings|
+  1. Introduction ............ |ansible-vault-introduction|
+  2. Setup ................... |ansible-vault-setup|
+  3. Passwords ............... |ansible-vault-passwords|
+  4. Commands ................ |ansible-vault-commands|
+  5. Mappings ................ |ansible-vault-mappings|
 
 ==============================================================================
-1. INTRODUCTION                                   *neoansible-vault-introduction*
+1. INTRODUCTION                                   *ansible-vault-introduction*
 
-neoansible-vault provides transparent editing of ansible-vault encrypted
+ansible-vault provides transparent editing of ansible-vault encrypted
 files and inline `!vault` YAML secrets. All cryptography is delegated to the
 `ansible-vault` CLI, which must be on $PATH. Requires Neovim >= 0.12.
 
@@ -21,11 +21,11 @@ read and re-encrypted when written. Inline `!vault` blocks are edited in a
 floating window and re-encrypted in place.
 
 ==============================================================================
-2. SETUP                                          *neoansible-vault-setup*
+2. SETUP                                          *ansible-vault-setup*
 
 The plugin works out of the box with defaults. To configure: >lua
 
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     password = nil,
     password_file = nil,
     env_password_var = "ANSIBLE_VAULT_PASSWORD",
@@ -141,7 +141,7 @@ Options ~
                         pickers (default true).
 
 ==============================================================================
-3. PASSWORDS                                      *neoansible-vault-passwords*
+3. PASSWORDS                                      *ansible-vault-passwords*
 
 For a given vault-id, id-specific sources win; otherwise the default chain
 applies (mirroring ansible, which tries every available secret):
@@ -180,7 +180,7 @@ cached in memory only, scoped per directory tree. Raw passwords are passed
 to ansible-vault via a 0600 temp file deleted after each call.
 
 ==============================================================================
-4. COMMANDS                                       *neoansible-vault-commands*
+4. COMMANDS                                       *ansible-vault-commands*
 
                                                         *:AnsibleVaultEdit*
 :AnsibleVaultEdit       Decrypt the `!vault` block under the cursor into a
@@ -269,29 +269,29 @@ to ansible-vault via a 0600 temp file deleted after each call.
 :AnsibleVaultClearCache Forget all cached (prompted) vault passwords.
 
 ==============================================================================
-5. STATUSLINE                                     *neoansible-vault-statusline*
+5. STATUSLINE                                     *ansible-vault-statusline*
 
-                                                *neoansible-vault.status()*
-require("neoansible-vault").status({buf})
+                                                *ansible-vault.status()*
+require("ansible-vault").status({buf})
                         Returns "[vault]" or "[vault:<id>]" for vault-related
                         buffers, "" otherwise. Cached per buffer (invalidated
                         on change), safe to call on every redraw. Example with
                         lualine: >lua
-                          sections = { lualine_x = { { require("neoansible-vault").status } } }
+                          sections = { lualine_x = { { require("ansible-vault").status } } }
 <
 ==============================================================================
-6. HIGHLIGHTS                                     *neoansible-vault-highlights*
+6. HIGHLIGHTS                                     *ansible-vault-highlights*
 
 The edit float maps these groups (default links shown; override freely):
 
-  NeoAnsibleVaultTitle    -> Title       float title ("vault: <key>")
-  NeoAnsibleVaultFooter   -> Special     footer key hints
-  NeoAnsibleVaultBorder   -> FloatBorder float border
+  AnsibleVaultTitle    -> Title       float title ("vault: <key>")
+  AnsibleVaultFooter   -> Special     footer key hints
+  AnsibleVaultBorder   -> FloatBorder float border
 
 The float content gets filetype=yaml for basic syntax coloring.
 
 ==============================================================================
-7. MAPPINGS                                       *neoansible-vault-mappings*
+7. MAPPINGS                                       *ansible-vault-mappings*
 
 All vault operations live under the <leader>av (ansible vault) prefix,
 chosen to coexist with LazyVim defaults and with mfussenegger/nvim-ansible.

@@ -1,9 +1,9 @@
-local conceal = require("neoansible-vault.conceal")
+local conceal = require("ansible-vault.conceal")
 local h = require("helpers")
 
 local tests = {}
 
-local ns = vim.api.nvim_create_namespace("neoansible_vault_conceal")
+local ns = vim.api.nvim_create_namespace("ansible_vault_conceal")
 
 ---Edit a yaml file with one real vault block; returns buf and block lines.
 ---@return integer buf, string passfile, string dir
@@ -19,7 +19,7 @@ local function edit_vault_file()
 end
 
 function tests.conceal_marks_blob_lines()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local buf = edit_vault_file()
 
   conceal.refresh(buf)
@@ -40,7 +40,7 @@ function tests.conceal_marks_blob_lines()
   end
   h.assert_true(has_label, "key line has a lock label")
   h.assert_true(has_conceal, "blob lines are concealed")
-  h.assert_eq(vim.b[buf].neoansible_vault_conceal, true)
+  h.assert_eq(vim.b[buf].ansible_vault_conceal, true)
   h.assert_eq(vim.wo.conceallevel, 2, "conceallevel raised in the showing window")
 
   -- remove the block: extmarks cleared and conceallevel restored
@@ -53,7 +53,7 @@ function tests.conceal_marks_blob_lines()
 end
 
 function tests.conceal_disabled_is_noop()
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     prompt = false,
     confirm_default = false,
     confirm_decrypt = false,
@@ -66,7 +66,7 @@ function tests.conceal_disabled_is_noop()
   h.assert_eq(vim.wo.conceallevel, 0)
 
   vim.cmd.bwipeout({ bang = true })
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 end
 
 return tests

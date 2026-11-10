@@ -1,7 +1,7 @@
 ---Buffer-local keymap registration: the plugin's keymaps only exist in
 ---buffers whose filetype is in `keymap_filetypes`, so they cannot clash
 ---with mappings in unrelated buffers.
-local config = require("neoansible-vault.config")
+local config = require("ansible-vault.config")
 
 local M = {}
 
@@ -31,7 +31,7 @@ function M.setup(group, lhs, rhs, desc)
   end
   vim.api.nvim_create_autocmd("FileType", {
     group = group,
-    desc = ("neoansible-vault: %s"):format(desc),
+    desc = ("ansible-vault: %s"):format(desc),
     callback = function(ev)
       M.attach(ev.buf, lhs, rhs, desc)
     end,
@@ -58,7 +58,7 @@ local WK_ICONS = {
 ---which-key spec entries for the configured prefix groups, parents first.
 ---Intended both for wk.add() and for contributing to which-key's opts.spec
 ---via lazy.nvim (`opts_extend`): `{ "folke/which-key.nvim", optional = true,
----opts = function() return { spec = require("neoansible-vault").which_key_spec() } end }`.
+---opts = function() return { spec = require("ansible-vault").which_key_spec() } end }`.
 ---@return table[]
 function M.which_key_spec()
   local groups = config.get().keymaps.group
@@ -106,7 +106,7 @@ function M.register_group()
   if vim.v.vim_did_enter == 1 then
     vim.schedule(add)
   end
-  local augroup = vim.api.nvim_create_augroup("neoansible_vault_wk", { clear = true })
+  local augroup = vim.api.nvim_create_augroup("ansible_vault_wk", { clear = true })
   vim.api.nvim_create_autocmd("VimEnter", { group = augroup, callback = add })
   vim.api.nvim_create_autocmd("User", { group = augroup, pattern = "VeryLazy", callback = add })
 end

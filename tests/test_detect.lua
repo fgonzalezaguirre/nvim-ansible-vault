@@ -1,4 +1,4 @@
-local detect = require("neoansible-vault.detect")
+local detect = require("ansible-vault.detect")
 local h = require("helpers")
 
 local SAMPLE_YAML = {

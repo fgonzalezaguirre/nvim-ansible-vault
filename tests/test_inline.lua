@@ -1,6 +1,6 @@
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
-local password = require("neoansible-vault.password")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
+local password = require("ansible-vault.password")
 local h = require("helpers")
 
 local tests = {}
@@ -31,7 +31,7 @@ end
 
 function tests.edit_decrypts_into_float_and_reencrypts_on_save()
   reset()
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     prompt = false,
     confirm_default = false,
     confirm_decrypt = false,
@@ -41,7 +41,7 @@ function tests.edit_decrypts_into_float_and_reencrypts_on_save()
   local buf, dir, passfile = make_yaml_buffer("original-secret")
   vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- inside the blob
 
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
   local win, fbuf = nil, nil
   h.assert_true(
     h.wait_for(function()
@@ -87,7 +87,7 @@ end
 
 function tests.edit_single_line_uses_input_dialog()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf, dir, passfile = make_yaml_buffer("original-secret")
   vim.api.nvim_win_set_cursor(0, { 2, 0 })
@@ -98,7 +98,7 @@ function tests.edit_single_line_uses_input_dialog()
     seen_default = opts.default
     cb("updated-secret")
   end
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
   h.assert_true(
     h.wait_for(function()
       return seen_default ~= nil
@@ -134,7 +134,7 @@ end
 
 function tests.edit_multiline_falls_back_to_float()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf = make_yaml_buffer("line one\nline two")
   vim.api.nvim_win_set_cursor(0, { 2, 0 })
@@ -145,7 +145,7 @@ function tests.edit_multiline_falls_back_to_float()
     input_called = true
     cb(nil)
   end
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
   local win = nil
   h.assert_true(
     h.wait_for(function()
@@ -164,12 +164,12 @@ end
 
 function tests.edit_outside_block_notifies_and_does_nothing()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf = make_yaml_buffer("x")
   vim.api.nvim_win_set_cursor(0, { 1, 0 }) -- "plain: value"
   local before = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
   vim.wait(300, function()
     return false
   end)
@@ -182,12 +182,12 @@ end
 
 function tests.decrypt_value_replaces_block_with_plaintext()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf = make_yaml_buffer("s3cr3t")
   vim.api.nvim_win_set_cursor(0, { 2, 0 })
 
-  require("neoansible-vault").decrypt_inline()
+  require("ansible-vault").decrypt_inline()
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 1, 2, false)[1] == "db_password: s3cr3t"
@@ -212,12 +212,12 @@ end
 
 function tests.decrypt_value_outside_block_notifies()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf = make_yaml_buffer("x")
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
   local before = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  require("neoansible-vault").decrypt_inline()
+  require("ansible-vault").decrypt_inline()
   vim.wait(300, function()
     return false
   end)
@@ -229,12 +229,12 @@ end
 
 function tests.hover_shows_decrypted_preview()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf = make_yaml_buffer("hover-secret")
   vim.api.nvim_win_set_cursor(0, { 2, 0 }) -- on the `db_password: !vault |` line
 
-  local inline = require("neoansible-vault.inline")
+  local inline = require("ansible-vault.inline")
   h.assert_true(inline.hover(), "hover on a vault block is handled")
 
   -- open_floating_preview opens an unnamed float containing the plaintext
@@ -266,7 +266,7 @@ end
 
 function tests.encrypt_selection_single_key_line()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -279,7 +279,7 @@ function tests.encrypt_selection_single_key_line()
   vim.ui.input = function(opts, cb)
     cb(opts.default) -- accept the parsed key name
   end
-  require("neoansible-vault").encrypt_selection(1, 1)
+  require("ansible-vault").encrypt_selection(1, 1)
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
@@ -304,7 +304,7 @@ function tests.encrypt_selection_single_key_line()
 end
 
 function tests.parse_scalar_reads_what_yaml_reads()
-  local inline = require("neoansible-vault.inline")
+  local inline = require("ansible-vault.inline")
   local cases = {
     { "abc123", "abc123", nil },
     { "abc123   # the token", "abc123", "the token" },
@@ -325,7 +325,7 @@ end
 
 function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -339,7 +339,7 @@ function tests.encrypt_selection_strips_quotes_and_keeps_the_comment()
     cb(opts.default)
   end
   vim.api.nvim_win_set_cursor(0, { 2, 2 })
-  require("neoansible-vault").encrypt_selection(2, 2)
+  require("ansible-vault").encrypt_selection(2, 2)
   h.assert_true(
     h.wait_for(function()
       return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), "\n"):match("!vault") ~= nil
@@ -367,7 +367,7 @@ end
 
 function tests.toggle_encrypts_a_key_value_line_without_prompts()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   h.write_passfile(dir)
@@ -387,7 +387,7 @@ function tests.toggle_encrypts_a_key_value_line_without_prompts()
     cb(nil)
   end
   vim.api.nvim_win_set_cursor(0, { 1, 0 })
-  require("neoansible-vault").toggle_inline()
+  require("ansible-vault").toggle_inline()
   local encrypted = h.wait_for(function()
     return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "api_token: !vault |"
   end)
@@ -401,7 +401,7 @@ end
 
 function tests.encrypt_selection_multiline()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -414,7 +414,7 @@ function tests.encrypt_selection_multiline()
   vim.ui.input = function(_, cb)
     cb("cert")
   end
-  require("neoansible-vault").encrypt_selection(1, 2)
+  require("ansible-vault").encrypt_selection(1, 2)
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("cert: !vault") ~= nil
@@ -438,7 +438,7 @@ end
 
 function tests.encrypt_selection_with_vault_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local dir = h.tmpdir()
   local passfile = h.write_passfile(dir)
@@ -451,7 +451,7 @@ function tests.encrypt_selection_with_vault_id()
   vim.ui.input = function(opts, cb)
     cb(opts.default)
   end
-  require("neoansible-vault").encrypt_selection(1, 1, "prod")
+  require("ansible-vault").encrypt_selection(1, 1, "prod")
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
@@ -477,7 +477,7 @@ end
 
 function tests.encrypt_selection_uses_config_vault_id()
   reset()
-  require("neoansible-vault").setup({
+  require("ansible-vault").setup({
     prompt = false,
     confirm_default = false,
     confirm_decrypt = false,
@@ -495,7 +495,7 @@ function tests.encrypt_selection_uses_config_vault_id()
   vim.ui.input = function(opts, cb)
     cb(opts.default)
   end
-  require("neoansible-vault").encrypt_selection(1, 1)
+  require("ansible-vault").encrypt_selection(1, 1)
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1]:match("!vault") ~= nil
@@ -515,7 +515,7 @@ end
 
 function tests.rekey_secret_under_cursor()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf, dir = make_yaml_buffer("old-secret")
 
@@ -531,7 +531,7 @@ function tests.rekey_secret_under_cursor()
   end
 
   vim.api.nvim_win_set_cursor(0, { 3, 0 }) -- inside the blob
-  require("neoansible-vault.inline").rekey()
+  require("ansible-vault.inline").rekey()
   h.assert_true(
     h.wait_for(function()
       return #inputs >= 2
@@ -541,7 +541,7 @@ function tests.rekey_secret_under_cursor()
   h.assert_true(
     h.wait_for(function()
       local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-      return require("neoansible-vault.detect").inline_region_at(lines, 1) ~= nil and vim.bo[buf].modified
+      return require("ansible-vault.detect").inline_region_at(lines, 1) ~= nil and vim.bo[buf].modified
     end),
     "block was not replaced"
   )
@@ -552,9 +552,9 @@ function tests.rekey_secret_under_cursor()
 
   -- decrypts with the NEW password, not the old one
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  local region = require("neoansible-vault.detect").inline_region_at(lines, 1)
+  local region = require("ansible-vault.detect").inline_region_at(lines, 1)
   local blob_path = dir .. "/blob.txt"
-  h.write_file(blob_path, require("neoansible-vault.detect").region_blob_text(region))
+  h.write_file(blob_path, require("ansible-vault.detect").region_blob_text(region))
 
   h.write_file(dir .. "/new.pass", "brand-new-pass\n")
   vim.uv.fs_chmod(dir .. "/new.pass", 384)
@@ -573,7 +573,7 @@ end
 
 function tests.rekey_secret_with_new_vault_id()
   reset()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
 
   local buf, _ = make_yaml_buffer("x")
   local orig_input = vim.ui.input
@@ -581,7 +581,7 @@ function tests.rekey_secret_with_new_vault_id()
     cb(opts.secret and "new-pass" or "prod")
   end
   vim.api.nvim_win_set_cursor(0, { 3, 0 })
-  require("neoansible-vault.inline").rekey()
+  require("ansible-vault.inline").rekey()
   h.assert_true(
     h.wait_for(function()
       return vim.api.nvim_buf_get_lines(buf, 2, 3, false)[1]:match("AES256;prod") ~= nil

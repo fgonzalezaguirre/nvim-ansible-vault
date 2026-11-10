@@ -24,7 +24,7 @@ local EXPECTED = {
 }
 
 function tests.keymaps_are_buffer_local_to_yaml()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local dir = h.tmpdir()
 
   local yml = dir .. "/vars.yml"
@@ -48,7 +48,7 @@ function tests.keymaps_are_buffer_local_to_yaml()
 end
 
 function tests.keymaps_apply_to_ansible_filetype()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   vim.cmd.runtime("ftdetect/ansible.lua")
   local dir = h.tmpdir()
 
@@ -64,7 +64,7 @@ function tests.keymaps_apply_to_ansible_filetype()
 end
 
 function tests.toggle_encrypts_line_under_cursor()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local dir = h.tmpdir()
   h.write_passfile(dir)
   local path = dir .. "/vars.yml"
@@ -105,7 +105,7 @@ local function del_global(lhs)
 end
 
 function tests.project_keymap_is_global_but_guarded()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local dir = h.tmpdir()
 
   -- outside an ansible project: warns, opens nothing
@@ -175,7 +175,7 @@ local function with_stubbed_wk(loaded)
   end
   package.loaded["which-key"] = nil
   package.loaded["which-key.config"] = nil
-  require("neoansible-vault.keymaps").register_group()
+  require("ansible-vault.keymaps").register_group()
   vim.api.nvim_exec_autocmds("VimEnter", {})
   vim.api.nvim_exec_autocmds("User", { pattern = "VeryLazy" })
   vim.wait(300, function()
@@ -197,7 +197,7 @@ local function groups_of(entries)
 end
 
 function tests.which_key_groups_queued_before_load()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local queued = with_stubbed_wk(false)
   local groups = groups_of(queued)
   h.assert_eq(groups["<leader>a"], "ansible")
@@ -205,7 +205,7 @@ function tests.which_key_groups_queued_before_load()
 end
 
 function tests.which_key_groups_inserted_directly_after_load()
-  require("neoansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
+  require("ansible-vault").setup({ prompt = false, confirm_default = false, confirm_decrypt = false })
   local queued, direct = with_stubbed_wk(true)
   h.assert_eq(#queued, 0, "late registration must not use the drained queue")
   local groups = groups_of(direct)

@@ -1,4 +1,4 @@
-local cli = require("neoansible-vault.cli")
+local cli = require("ansible-vault.cli")
 local h = require("helpers")
 
 local tests = {}

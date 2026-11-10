@@ -1,31 +1,31 @@
-if vim.g.loaded_neoansible_vault == 1 then
+if vim.g.loaded_ansible_vault == 1 then
   return
 end
-vim.g.loaded_neoansible_vault = 1
+vim.g.loaded_ansible_vault = 1
 
 if vim.fn.has("nvim-0.12") == 0 then
-  vim.notify("neoansible-vault requires Neovim >= 0.12", vim.log.levels.ERROR, { title = "neoansible-vault" })
+  vim.notify("ansible-vault requires Neovim >= 0.12", vim.log.levels.ERROR, { title = "ansible-vault" })
   return
 end
 
 vim.api.nvim_create_user_command("AnsibleVaultEdit", function()
-  require("neoansible-vault").edit_inline()
+  require("ansible-vault").edit_inline()
 end, { desc = "Edit the !vault block under the cursor" })
 
 vim.api.nvim_create_user_command("AnsibleVaultSecrets", function()
-  require("neoansible-vault").pick_secret()
+  require("ansible-vault").pick_secret()
 end, { desc = "Pick a !vault secret in the current buffer" })
 
 vim.api.nvim_create_user_command("AnsibleVaultReveal", function()
-  require("neoansible-vault").toggle_reveal()
+  require("ansible-vault").toggle_reveal()
 end, { desc = "Toggle in-place editing of all !vault secrets (re-encrypts on write)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultFiles", function()
-  require("neoansible-vault").pick_vault_file()
+  require("ansible-vault").pick_vault_file()
 end, { desc = "Pick a vault-encrypted file in the project" })
 
 vim.api.nvim_create_user_command("AnsibleVaultEncryptString", function(cmd)
-  require("neoansible-vault").encrypt_selection(
+  require("ansible-vault").encrypt_selection(
     cmd.line1,
     cmd.line2,
     cmd.args ~= "" and cmd.args or nil,
@@ -36,47 +36,47 @@ end, {
   nargs = "?",
   bang = true,
   complete = function(arglead)
-    return require("neoansible-vault.ids").complete(0)(arglead)
+    return require("ansible-vault.ids").complete(0)(arglead)
   end,
   desc = "Encrypt lines/selection into a !vault block ([vault-id] optional, ! asks for a one-off password)",
 })
 
 vim.api.nvim_create_user_command("AnsibleVaultDecryptString", function()
-  require("neoansible-vault").decrypt_inline()
+  require("ansible-vault").decrypt_inline()
 end, { desc = "Decrypt the !vault block under the cursor back to plaintext" })
 
 vim.api.nvim_create_user_command("AnsibleVaultToggle", function()
-  require("neoansible-vault").toggle_inline()
+  require("ansible-vault").toggle_inline()
 end, { desc = "Decrypt the !vault block under the cursor, or encrypt the plaintext under it" })
 
 vim.api.nvim_create_user_command("AnsibleVaultDecrypt", function()
-  require("neoansible-vault").decrypt_buffer()
+  require("ansible-vault").decrypt_buffer()
 end, { desc = "Decrypt the current buffer (re-encrypts on write)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultEncrypt", function(cmd)
-  require("neoansible-vault").encrypt_buffer(cmd.args ~= "" and cmd.args or nil, { force_prompt = cmd.bang })
+  require("ansible-vault").encrypt_buffer(cmd.args ~= "" and cmd.args or nil, { force_prompt = cmd.bang })
 end, {
   nargs = "?",
   bang = true,
   complete = function(arglead)
-    return require("neoansible-vault.ids").complete(0)(arglead)
+    return require("ansible-vault.ids").complete(0)(arglead)
   end,
   desc = "Encrypt the current buffer, replacing it with ciphertext ([vault-id] optional, ! asks for a one-off password)",
 })
 
 vim.api.nvim_create_user_command("AnsibleVaultRekey", function()
-  require("neoansible-vault").rekey_buffer()
+  require("ansible-vault").rekey_buffer()
 end, { desc = "Rekey the vault file with a new password (and vault-id)" })
 
 vim.api.nvim_create_user_command("AnsibleVaultClearCache", function()
-  require("neoansible-vault").clear_password_cache()
-  vim.notify("vault password cache cleared", vim.log.levels.INFO, { title = "neoansible-vault" })
+  require("ansible-vault").clear_password_cache()
+  vim.notify("vault password cache cleared", vim.log.levels.INFO, { title = "ansible-vault" })
 end, { desc = "Forget cached vault passwords" })
 
 -- Work out of the box with defaults when the user never calls setup().
 local function bootstrap()
-  if not require("neoansible-vault.config")._did_setup then
-    require("neoansible-vault").setup({})
+  if not require("ansible-vault.config")._did_setup then
+    require("ansible-vault").setup({})
   end
 end
 
@@ -85,7 +85,7 @@ if vim.v.vim_did_enter == 1 then
   bootstrap()
 else
   vim.api.nvim_create_autocmd("VimEnter", {
-    group = vim.api.nvim_create_augroup("neoansible_vault_bootstrap", { clear = true }),
+    group = vim.api.nvim_create_augroup("ansible_vault_bootstrap", { clear = true }),
     once = true,
     callback = bootstrap,
   })

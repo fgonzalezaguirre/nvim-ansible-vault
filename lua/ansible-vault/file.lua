@@ -2,19 +2,19 @@
 ---
 ---A vault-encrypted file opened in a buffer is replaced in-place with its
 ---decrypted plaintext (BufReadPost). The buffer is flagged via
----`b:neoansible_vault` and switched to `buftype=acwrite`; a buffer-local
+---`b:ansible_vault` and switched to `buftype=acwrite`; a buffer-local
 ---BufWriteCmd re-encrypts on every write.
-local cli = require("neoansible-vault.cli")
-local config = require("neoansible-vault.config")
-local detect = require("neoansible-vault.detect")
-local password = require("neoansible-vault.password")
+local cli = require("ansible-vault.cli")
+local config = require("ansible-vault.config")
+local detect = require("ansible-vault.detect")
+local password = require("ansible-vault.password")
 
 local M = {}
 
 local group = nil
 
 local function notify(msg, level)
-  vim.notify(msg, level, { title = "neoansible-vault" })
+  vim.notify(msg, level, { title = "ansible-vault" })
 end
 
 local function notify_err(msg)
@@ -36,7 +36,7 @@ end
 ---@param buf integer
 ---@return table|nil state
 local function get_state(buf)
-  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "neoansible_vault")
+  local ok, state = pcall(vim.api.nvim_buf_get_var, buf, "ansible_vault")
   if ok then
     return state
   end
@@ -47,7 +47,7 @@ end
 ---@param buf integer
 ---@param state { path: string, vault_id: string|nil, version: string|nil }
 local function flag_buffer(buf, state)
-  vim.b[buf].neoansible_vault = state
+  vim.b[buf].ansible_vault = state
   vim.bo[buf].buftype = "acwrite"
   vim.bo[buf].swapfile = false
   -- NOTE: 'backup'/'writebackup' are global-only options; users who want
@@ -56,7 +56,7 @@ local function flag_buffer(buf, state)
   vim.api.nvim_create_autocmd("BufWriteCmd", {
     group = group,
     buffer = buf,
-    desc = "neoansible-vault: re-encrypt on write",
+    desc = "ansible-vault: re-encrypt on write",
     callback = function()
       M.write(buf)
     end,
@@ -141,7 +141,7 @@ function M.write(buf)
   end
 
   local uv = vim.uv or vim.loop
-  local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-write-XXXXXX")
+  local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/ansible-vault-write-XXXXXX")
   if not fd then
     notify_err("failed to create temp file for encryption")
     return
@@ -165,7 +165,7 @@ function M.write(buf)
         return
       end
       state.path = target
-      vim.b[buf].neoansible_vault = state
+      vim.b[buf].ansible_vault = state
       vim.bo[buf].modified = false
       notify("encrypted and wrote " .. vim.fn.fnamemodify(target, ":t"), vim.log.levels.INFO)
     end)
@@ -230,7 +230,7 @@ function M.encrypt_buffer(vault_id, opts)
         text = text .. "\n"
       end
       local uv = vim.uv or vim.loop
-      local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/neoansible-vault-enc-XXXXXX")
+      local fd, tmp = uv.fs_mkstemp(uv.os_tmpdir() .. "/ansible-vault-enc-XXXXXX")
       if not fd then
         notify_err("failed to create temp file for encryption")
         return
@@ -258,7 +258,7 @@ function M.encrypt_buffer(vault_id, opts)
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, to_lines(ciphertext))
         vim.bo[buf].modified = true
         -- The buffer now holds ciphertext: drop the transparent-write hook.
-        vim.b[buf].neoansible_vault = nil
+        vim.b[buf].ansible_vault = nil
         vim.bo[buf].buftype = ""
         vim.api.nvim_clear_autocmds({ group = group, buffer = buf, event = "BufWriteCmd" })
         notify("buffer encrypted; write to save the ciphertext", vim.log.levels.INFO)
@@ -270,7 +270,7 @@ function M.encrypt_buffer(vault_id, opts)
   if vault_id then
     with_vault_id(vault_id)
   else
-    require("neoansible-vault.ids").pick(buf, with_vault_id)
+    require("ansible-vault.ids").pick(buf, with_vault_id)
   end
 end
 
@@ -331,7 +331,7 @@ function M.rekey_buffer()
           password.clear_cache()
           if state and vim.api.nvim_buf_is_valid(buf) then
             state.vault_id = new_id or vault_id
-            vim.b[buf].neoansible_vault = state
+            vim.b[buf].ansible_vault = state
           end
           notify(
             ("rekeyed %s%s"):format(
@@ -351,13 +351,13 @@ function M.setup()
   if group then
     return
   end
-  group = vim.api.nvim_create_augroup("neoansible_vault", { clear = true })
+  group = vim.api.nvim_create_augroup("ansible_vault", { clear = true })
 
   if config.get().auto_decrypt then
     vim.api.nvim_create_autocmd("BufReadPost", {
       group = group,
       pattern = "*",
-      desc = "neoansible-vault: transparently decrypt vault files",
+      desc = "ansible-vault: transparently decrypt vault files",
       callback = function(ev)
         on_read(ev.buf)
       end,
@@ -365,10 +365,10 @@ function M.setup()
   end
 
   local km = config.get().keymaps
-  require("neoansible-vault.keymaps").setup(group, km.toggle_buffer, function()
+  require("ansible-vault.keymaps").setup(group, km.toggle_buffer, function()
     M.toggle_buffer()
   end, "Ansible vault: encrypt/decrypt buffer")
-  require("neoansible-vault.keymaps").setup(group, km.rekey_file, function()
+  require("ansible-vault.keymaps").setup(group, km.rekey_file, function()
     M.rekey_buffer()
   end, "Ansible vault: rekey file")
 end

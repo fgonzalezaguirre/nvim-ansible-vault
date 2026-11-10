@@ -45,6 +45,7 @@ end
 local TAG_PAT = "^(%s*)(.-):%s*!vault%s*|%s*$"
 local HEX_PAT = "^%s*[0-9a-fA-F]+%s*$"
 local HEADER_PAT = "^%s*%$ANSIBLE_VAULT;"
+M.TAG_PAT = TAG_PAT
 
 ---@class ansible-vault.InlineRegion
 ---@field start_row integer 0-indexed row of the `key: !vault |` line

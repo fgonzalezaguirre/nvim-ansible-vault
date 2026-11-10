@@ -49,6 +49,7 @@ The plugin works out of the box with defaults. To configure: >lua
     },
     conceal = {
       enabled = true,
+      atomic = true,
     },
     keymaps = {
       toggle = "<leader>avv",
@@ -117,6 +118,19 @@ Options ~
                         a "[vault]" marker (uses conceal_lines extmarks;
                         'conceallevel' is raised per window while it shows a
                         concealed buffer and restored afterwards).
+  conceal.atomic        The `!vault |` token on the key line stands for the
+                        hidden blob (default true):
+                        - the blob is shown only while the cursor is on the
+                          token;
+                        - the cursor never rests on blob lines; the token acts
+                          like one character (landing inside it snaps to its
+                          start, moving forward off it jumps past the block);
+                        - breaking the token (`x`, `dw`, `D`, `C`, ...) or
+                          deleting the key line removes the blob as well; a
+                          single |u| restores both;
+                        - `dd` on the key line deletes and yanks the whole
+                          block, `o` opens the new line below it, and lines
+                          put between a key and its blob move below the blob.
   keymaps.toggle        Encrypt the plaintext under the cursor / decrypt the
                         block under the cursor (default <leader>avv).
   keymaps.toggle_buffer Encrypt/decrypt the whole buffer by state

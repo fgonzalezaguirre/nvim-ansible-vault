@@ -34,6 +34,7 @@ local M = {}
 
 ---@class ansible-vault.ConcealConfig
 ---@field enabled boolean Conceal the hex body of inline `!vault` blocks
+---@field atomic boolean Treat the `!vault |` token as the whole hidden blob (show/move/edit)
 
 ---@class ansible-vault.VaultIdConfig
 ---@field password string|nil Password for this vault-id, set directly (use with care)
@@ -93,6 +94,10 @@ M.defaults = {
   },
   conceal = {
     enabled = true,
+    -- the `!vault |` token stands for the hidden blob: blob shown only with the
+    -- cursor on the token, cursor skips blob lines, breaking the token or
+    -- deleting the key line drops the blob, `dd`/`o` act on the whole block
+    atomic = true,
   },
   keymaps = {
     toggle = "<leader>avv",

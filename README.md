@@ -19,7 +19,11 @@ files and inline `!vault` secrets, powered by the real `ansible-vault` CLI.
   into the edit float.
 - **Concealed blobs** — the hex body of `!vault` blocks is hidden behind a
   `[vault]` marker, so secret-heavy files stay readable (`'conceallevel'` is
-  managed per window and restored automatically).
+  managed per window and restored automatically). The `!vault |` token stands
+  for the hidden blob: the blob shows only while the cursor is on the token,
+  the cursor skips blob lines, breaking the token (`x`, `dw`, `D`, `C`, ...)
+  or deleting the key line removes the blob too (one `u` restores it), `dd`
+  deletes and yanks the whole block and `o` opens below it.
 - **Hover preview** — `K` on a `!vault` block shows the decrypted value in a
   read-only float without entering edit mode (falls back to default `K`
   elsewhere; LSP buffer-local `K` mappings take precedence).
@@ -126,6 +130,7 @@ require("ansible-vault").setup({
   },
   conceal = {
     enabled = true,             -- hide !vault blob lines behind a [vault] marker
+    atomic = true,              -- the `!vault |` token stands for the hidden blob
   },
   keymaps = {
     toggle = "<leader>avv",       -- encrypt/decrypt secret under cursor
